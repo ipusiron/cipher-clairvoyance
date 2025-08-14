@@ -3,125 +3,214 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cipher Clairvoyance — Classical Cipher Identification & Visualization</title>
-  <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式推定・可視化ツール（教育用UIつき）">
+  <title>Cipher Clairvoyance — 暗号解析ツール</title>
+  <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式を自動判定する教育用ツール">
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header class="container header">
     <div class="hero">
       <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
-      <p class="subtitle">Classical Cipher Identification & Visualization（方式推定・可視化・学習UI）</p>
+      <p class="subtitle">暗号文を入力すると、使われた暗号方式を自動判定します</p>
     </div>
   </header>
 
   <main class="container">
-    <!-- 入力とオプション -->
+    <!-- 入力エリア -->
     <section class="card">
-      <div class="controls">
-        <label for="cipherText" class="label">暗号文</label>
-        <textarea id="cipherText" rows="8" placeholder="英語前提。数字・記号・空白を含んでいてもOK（解析はA–Zのみ）"></textarea>
-
-        <div class="row">
-          <div class="col">
-            <h3>前処理オプション</h3>
-            <div class="checks">
-              <label><input type="checkbox" id="chkStripNonLetters" checked> 解析は A–Z のみ使用（数字・記号は解析から除外）</label>
-              <label><input type="checkbox" id="chkPreserveSpaces" checked> スペースは表示に残す（解析は除外）</label>
-              <label><input type="checkbox" id="chkDetectNumeric" checked> 数字系暗号検出（Baconian / Polybius / Nihilist）を有効化</label>
-              <label><input type="checkbox" id="chkShowSanitized" checked> サニタイズプレビューを表示（除外文字を淡色表示）</label>
-            </div>
-
-            <h3 class="mt16">判定手法（実行するものにチェック）</h3>
-            <div class="checks">
-              <label><input type="checkbox" id="chkBasic" checked> 基本統計（IoC / χ² / 文字集合 / 英語らしさ）</label>
-              <label><input type="checkbox" id="chkCaesarAffine" checked> Caesar / Affine 総当り</label>
-              <label><input type="checkbox" id="chkVigAutoKasiski" checked> Vigenère 周期候補（AutoCorr / Kasiski）</label>
-              <label><input type="checkbox" id="chkVigColumns" checked> Vigenère 列解析（列IC＋列Caesar）</label>
-              <label><input type="checkbox" id="chkPlayfair" checked> Playfair 疑い検査</label>
-              <label><input type="checkbox" id="chkTransposition" checked> 転置疑い（単字χ² vs n-gram英語らしさ）</label>
-              <label><input type="checkbox" id="chkADFGX" checked> ADFGX / ADFGVX 検出</label>
-            </div>
+      <div class="input-header">
+        <h2>① 暗号文を入力</h2>
+        <button id="btnSampleSelect" class="btn secondary sample-btn">📄 サンプル読み込み</button>
+      </div>
+      <textarea id="cipherText" rows="6" placeholder="解析したい暗号文を入力してください（英語のみ対応）"></textarea>
+      
+      <!-- オプション設定 -->
+      <details class="options-detail">
+        <summary>⚙️ 詳細設定</summary>
+        <div class="options-content">
+          <h4>前処理</h4>
+          <div class="checks">
+            <label><input type="checkbox" id="chkStripNonLetters" checked> 英字以外を除外して解析</label>
+            <label><input type="checkbox" id="chkPreserveSpaces" checked> スペースは表示用に保持</label>
           </div>
-
-          <div class="col">
-            <h3>サンプル</h3>
-            <select id="sampleSelect">
-              <option value="">-- サンプルを選択 --</option>
-              <option value="VIG">Vigenère（LEMON）: LXFOPVEFRNHR</option>
-              <option value="CAESAR">Caesar(+3) “HELLOWORLD” → KHOOR ZRUOG</option>
-              <option value="AFFINE">Affine(a=5,b=8) → IHHWVC SWFRCP</option>
-              <option value="PLAYFAIR">Playfair → BMODZBXDNABEKUDMUIXMMOUVIF</option>
-              <option value="COLUMNAR">Columnar → WECRL TEERD SOEEF EAOCA IVDEN</option>
-              <option value="ADFGX">ADFGX set → ADFGADXGAFDGXAFDG</option>
-              <option value="BACON">Baconian（A/Bのみ）→ ABAAB BAABB AABAA ABBBA ABBAB</option>
-              <option value="POLYBIUS">Polybius（数字ペア）→ 23 44 15 42 ...</option>
-              <option value="NIHILIST">Nihilist（数字列）→ 73 21 09 44 ...</option>
-            </select>
-            <button id="btnLoadSample" class="btn secondary">読み込む</button>
-
-            <div id="sanitizedPreview" class="preview mt16" hidden></div>
-
-            <div class="actions mt16">
-              <button id="btnAnalyze" class="btn primary">解析</button>
-              <button id="btnClear" class="btn">クリア</button>
-            </div>
+          
+          <h4>解析手法</h4>
+          <div class="checks">
+            <label><input type="checkbox" id="chkBasic" checked> 基本統計</label>
+            <label><input type="checkbox" id="chkCaesarAffine" checked> Caesar/Affine総当り</label>
+            <label><input type="checkbox" id="chkVigAutoKasiski" checked> Vigenère周期検出</label>
+            <label><input type="checkbox" id="chkVigColumns" checked> Vigenère列分析</label>
+            <label><input type="checkbox" id="chkPlayfair" checked> Playfair検出</label>
+            <label><input type="checkbox" id="chkTransposition" checked> 転置暗号検出</label>
+            <label><input type="checkbox" id="chkADFGX" checked> ADFGX(VX)検出</label>
           </div>
         </div>
+      </details>
+      
+      <div class="action-area">
+        <button id="btnAnalyze" class="btn primary large" disabled>🔍 解析開始</button>
+        <button id="btnClear" class="btn" disabled>クリア</button>
       </div>
     </section>
 
-    <!-- 確率リング -->
-    <section class="card">
-      <h2>推定結果（確率リング）</h2>
-      <div id="resultSummary" class="result-summary empty">結果はここに表示されます。</div>
-    </section>
+    <!-- メイン結果 -->
+    <section id="mainResult" class="card result-card hidden">
+      <h2>② 解析結果</h2>
+      
+      <!-- シンプルな結果表示 -->
+      <div id="simpleResult" class="simple-result">
+        <div class="winner-cipher">
+          <div class="cipher-icon">🏆</div>
+          <div class="cipher-details">
+            <h3 id="winnerName">判定中...</h3>
+            <p id="winnerDesc" class="description"></p>
+            <div class="confidence-bar">
+              <div id="confidenceLevel" class="confidence-fill"></div>
+              <span id="confidenceText" class="confidence-text">0%</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="other-possibilities" id="otherPossibilities"></div>
+      </div>
 
-    <!-- 可視化：統計/周期/列 -->
-    <section class="card">
-      <h2>根拠と可視化</h2>
-      <div id="details"></div>
+      <!-- 判定根拠 -->
+      <div class="evidence-section">
+        <h3>🔍 判定根拠</h3>
+        <div id="evidenceContent" class="evidence-content">
+          <!-- 根拠はJSで動的生成 -->
+        </div>
+      </div>
 
-      <div class="viz-grid mt16">
-        <div>
-          <h4>単文字頻度（観測 vs 英語期待）</h4>
-          <svg id="freqChart" class="spark" viewBox="0 0 520 180" preserveAspectRatio="none"></svg>
-        </div>
-        <div>
-          <h4>オートコリレーション</h4>
-          <svg id="acSpark" class="spark" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
-          <div id="acAlign" class="preview mt8">バーをクリックすると、原文と t シフトの一致が表示されます。</div>
-        </div>
-        <div>
-          <h4>Kasiski GCDヒスト</h4>
-          <svg id="gcdSpark" class="spark" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
-        </div>
-        <div>
-          <h4>列ICヒート（最有力 k）</h4>
-          <svg id="icHeat" class="heat" viewBox="0 0 400 36" preserveAspectRatio="none"></svg>
-        </div>
+      <!-- 詳細表示トグル -->
+      <div class="detail-toggle">
+        <button id="toggleDetails" class="btn secondary">📊 詳細な分析を見る</button>
       </div>
     </section>
 
-    <!-- Kasiski：反復n-gram表 -->
-    <section class="card">
-      <h2>Kasiski 反復 n-gram（クリックで原文ハイライト）</h2>
-      <div id="repeats"></div>
+    <!-- 詳細分析（初期は非表示） -->
+    <section id="detailsSection" class="hidden">
+      <!-- 基本統計 -->
+      <div class="card detail-card">
+        <h3>
+          <span class="help-icon" title="暗号文の基本的な統計情報">ℹ️</span>
+          基本統計
+        </h3>
+        <div id="basicStats" class="stats-grid"></div>
+        
+        <!-- 文字頻度グラフ -->
+        <div class="freq-chart-container">
+          <h4>文字の出現頻度</h4>
+          <p class="help-text">青: 暗号文の頻度 / 灰: 英語の標準頻度</p>
+          <svg id="freqChart" class="freq-chart" viewBox="0 0 520 180"></svg>
+        </div>
+      </div>
+
+      <!-- 高度な分析（初期は非表示） -->
+      <div id="advancedSection" class="hidden">
+        <!-- 周期性分析 -->
+        <div class="card detail-card">
+          <h3>
+            <span class="help-icon" title="Vigenère暗号などの周期性を持つ暗号を検出する分析手法">ℹ️</span>
+            周期性分析（Vigenère暗号の検出）
+          </h3>
+          
+          <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 3px solid #3b82f6;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">なぜ周期性を調べるのか？</h4>
+            <p style="margin: 0; color: #64748b; line-height: 1.5;">
+              Vigenère暗号は「CIPHER」のようなキーワードを繰り返し使って暗号化します。
+              キーワードが繰り返されるため、暗号文にも規則的なパターンが現れます。
+              この「周期性」を見つけることで、Vigenère暗号であることや鍵の長さを推定できます。
+            </p>
+          </div>
+          
+          <div class="period-analysis">
+            <div class="analysis-item">
+              <h4>自己相関分析</h4>
+              <div style="margin-bottom: 1rem;">
+                <p class="help-text" style="margin-bottom: 0.5rem;"><strong>何をしているか：</strong></p>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+                  暗号文を少しずつずらして、元の文字と一致する割合を計算します。
+                  Vigenère暗号では、鍵の長さの倍数でずらしたときに一致率が高くなります。
+                </p>
+                <p class="help-text"><strong>グラフの見方：</strong> 高い棒グラフが現れる位置が鍵長の手がかり</p>
+              </div>
+              <svg id="acSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
+            </div>
+            
+            <div class="analysis-item">
+              <h4>Kasiski分析</h4>
+              <div style="margin-bottom: 1rem;">
+                <p class="help-text" style="margin-bottom: 0.5rem;"><strong>何をしているか：</strong></p>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+                  暗号文の中で同じ文字列が繰り返し現れる箇所を探し、その間隔を調べます。
+                  Vigenère暗号では、これらの間隔が鍵の長さの倍数になる傾向があります。
+                </p>
+                <p class="help-text"><strong>グラフの見方：</strong> よく現れる間隔が鍵長の候補</p>
+              </div>
+              <svg id="gcdSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
+            </div>
+          </div>
+          
+          <div style="margin-top: 1rem; padding: 1rem; background: #fff7ed; border-radius: 8px; border-left: 3px solid #f59e0b;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #92400e;">💡 分析結果の読み方</h4>
+            <ul style="margin: 0; padding-left: 1.2rem; color: #92400e; font-size: 0.9rem;">
+              <li style="margin-bottom: 0.25rem;">両方のグラフで同じ数値（例：6, 12, 18など）に高い値が出る場合、その数値が鍵長の可能性が高い</li>
+              <li style="margin-bottom: 0.25rem;">単発暗号（Caesar、Affineなど）では明確なピークは現れません</li>
+              <li>ランダムなテキストでも偶然のピークが出ることがあります</li>
+            </ul>
+          </div>
+          
+          <div id="vigDetails" class="vig-details hidden">
+            <h4>推定された鍵長での列分析</h4>
+            <div id="vigColumns" class="vig-columns"></div>
+          </div>
+        </div>
+
+        <!-- 繰り返しパターン -->
+        <div class="card detail-card">
+          <h3>
+            <span class="help-icon" title="暗号文中の繰り返しパターン">ℹ️</span>
+            繰り返しパターン分析
+          </h3>
+          <div id="repeats" class="repeats-table"></div>
+        </div>
+      </div>
+
+      <!-- 専門家向け表示トグル -->
+      <div class="card">
+        <button id="toggleAdvanced" class="btn secondary">🔬 専門家向け分析を見る</button>
+      </div>
     </section>
 
-    <!-- Vigenère ラボ -->
-    <section class="card">
-      <h2>Vigenère ラボ（列分割・列Caesar・暫定復号）</h2>
-      <div id="vigLab"></div>
-    </section>
   </main>
 
   <footer>
     <div class="footer">
-      🔗 GitHub: <a href="https://github.com/yourname/cipher-clairvoyance" target="_blank">yourname/cipher-clairvoyance</a>
+      🔗 GitHubリポジトリはこちら（ <a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank">ipusiron/cipher-clairvoyance</a> ）
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <!-- サンプル選択モーダル -->
+  <div id="sampleModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📄 サンプル暗号文を選択</h3>
+        <button id="modalClose" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">
+          各暗号方式のサンプル暗号文から選択してください。<br>
+          アメリカ独立宣言の一部を各種暗号で暗号化したものです。
+        </p>
+        <div id="sampleList" class="sample-list">
+          <!-- サンプルリストはJSで動的生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript モジュール -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
