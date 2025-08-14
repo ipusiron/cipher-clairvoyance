@@ -1,8 +1,9 @@
 // メインアプリケーション
 
 import { analyzeText } from './analyzer.js';
-import { updateUI, toggleSection, clearForm, updateButtonStates } from './ui.js';
+import { updateUI, toggleSection, clearForm, updateButtonStates, validateInput } from './ui.js';
 import { CIPHER_SAMPLES } from './samples.js';
+import { HELP_CONTENT } from './help-content.js';
 
 // 初期化処理
 function init() {
@@ -14,7 +15,14 @@ function setupEventListeners() {
   // テキストエリアの入力監視
   const cipherText = document.getElementById('cipherText');
   if (cipherText) {
-    cipherText.addEventListener('input', updateButtonStates);
+    cipherText.addEventListener('input', () => {
+      updateButtonStates();
+      validateInput(); // リアルタイム検証
+    });
+    
+    // フォーカスアウト時にも検証
+    cipherText.addEventListener('blur', validateInput);
+    
     // 初期状態を設定
     updateButtonStates();
   }
@@ -25,7 +33,13 @@ function setupEventListeners() {
     btnSampleSelect.addEventListener('click', openSampleModal);
   }
 
-  // モーダル関連
+  // ヘルプボタン
+  const btnHelp = document.getElementById('btnHelp');
+  if (btnHelp) {
+    btnHelp.addEventListener('click', openHelpModal);
+  }
+
+  // サンプルモーダル関連
   const modalClose = document.getElementById('modalClose');
   const sampleModal = document.getElementById('sampleModal');
   
@@ -39,8 +53,36 @@ function setupEventListeners() {
     });
   }
 
+  // ヘルプモーダル関連
+  const helpModalClose = document.getElementById('helpModalClose');
+  const helpModal = document.getElementById('helpModal');
+  
+  if (helpModalClose) {
+    helpModalClose.addEventListener('click', closeHelpModal);
+  }
+  
+  if (helpModal) {
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) closeHelpModal();
+    });
+  }
+
   // サンプルリストを初期化
   initializeSampleList();
+
+  // キーボードショートカット（Escapeキーでモーダルを閉じる）
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const sampleModal = document.getElementById('sampleModal');
+      const helpModal = document.getElementById('helpModal');
+      
+      if (sampleModal && !sampleModal.classList.contains('hidden')) {
+        closeSampleModal();
+      } else if (helpModal && !helpModal.classList.contains('hidden')) {
+        closeHelpModal();
+      }
+    }
+  });
 
   // 解析実行
   const btnAnalyze = document.getElementById('btnAnalyze');
@@ -87,26 +129,108 @@ function initializeSampleList() {
     const item = document.createElement('div');
     item.className = 'sample-item';
     
-    // ヴィジュネル暗号の場合、鍵情報を追加
+    // 鍵情報を生成（各暗号タイプに応じて）
     let keyInfo = '';
+    
     if (sample.id === 'vigenere') {
       keyInfo = `
         <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
           <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.25rem;">
             <span>キーワード: 
-              <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+              <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
                 ${'*'.repeat(sample.key.length)}
               </span>
             </span>
             <span>鍵長: 
-              <span class="keylength-mask" data-length="${sample.keyLength}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+              <span class="keylength-mask" data-length="${sample.keyLength}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
                 **
               </span>
             </span>
           </div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">
-            クリックで表示
+        </div>
+      `;
+    } else if (sample.id === 'vigenere2') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.25rem;">
+            <span>キーワード: 
+              <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+                ${'*'.repeat(sample.key.length)}
+              </span>
+            </span>
+            <span>鍵長: 
+              <span class="keylength-mask" data-length="${sample.keyLength}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+                *
+              </span>
+            </span>
           </div>
+        </div>
+      `;
+    } else if (sample.id === 'caesar') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span>シフト量: 
+            <span class="key-mask" data-key="${sample.shift}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+              *
+            </span>
+          </span>
+        </div>
+      `;
+    } else if (sample.id === 'affine') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <span>a値: 
+              <span class="key-mask" data-key="${sample.a}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+                *
+              </span>
+            </span>
+            <span>b値: 
+              <span class="key-mask" data-key="${sample.b}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+                *
+              </span>
+            </span>
+          </div>
+        </div>
+      `;
+    } else if (sample.id === 'playfair') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span>キーワード: 
+            <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+              ${'*'.repeat(sample.key.length)}
+            </span>
+          </span>
+        </div>
+      `;
+    } else if (sample.id === 'railfence') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span>レール数: 
+            <span class="key-mask" data-key="${sample.rails}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+              *
+            </span>
+          </span>
+        </div>
+      `;
+    } else if (sample.id === 'columnar') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span>キーワード: 
+            <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+              ${'*'.repeat(sample.key.length)}
+            </span>
+          </span>
+        </div>
+      `;
+    } else if (sample.id === 'grille') {
+      keyInfo = `
+        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span>グリッドサイズ: 
+            <span class="key-mask" data-key="${sample.gridSize}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
+              **
+            </span>
+          </span>
         </div>
       `;
     }
@@ -119,15 +243,10 @@ function initializeSampleList() {
     
     item.addEventListener('click', (e) => {
       // マスクされた要素がクリックされた場合の処理
-      if (e.target.classList.contains('key-mask')) {
+      if (e.target.classList.contains('key-mask') || e.target.classList.contains('keylength-mask')) {
         e.stopPropagation();
-        toggleMask(e.target, e.target.dataset.key);
-        return;
-      }
-      
-      if (e.target.classList.contains('keylength-mask')) {
-        e.stopPropagation();
-        toggleMask(e.target, e.target.dataset.length);
+        const value = e.target.dataset.key || e.target.dataset.length;
+        toggleMask(e.target, value);
         return;
       }
       
@@ -158,6 +277,30 @@ function closeSampleModal() {
   }
 }
 
+// ヘルプモーダルを開く
+function openHelpModal() {
+  const modal = document.getElementById('helpModal');
+  if (modal) {
+    // ヘルプコンテンツを動的に読み込み
+    const helpContent = modal.querySelector('.help-content');
+    if (helpContent) {
+      helpContent.innerHTML = HELP_CONTENT;
+    }
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// ヘルプモーダルを閉じる
+function closeHelpModal() {
+  const modal = document.getElementById('helpModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+}
+
 // サンプルを読み込む
 function loadSample(ciphertext) {
   document.getElementById('cipherText').value = ciphertext;
@@ -169,6 +312,12 @@ function performAnalysis() {
   const text = document.getElementById('cipherText').value;
   if (!text.trim()) {
     alert('暗号文を入力してください');
+    return;
+  }
+
+  // 入力検証
+  if (!validateInput()) {
+    // エラーがある場合は解析を実行しない
     return;
   }
 

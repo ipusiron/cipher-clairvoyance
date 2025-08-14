@@ -22,10 +22,10 @@ export const SAMPLES = {
 
 // 暗号方式の説明
 export const CIPHER_DESCRIPTIONS = {
-  caesar: "各文字を一定数ずらす最も基本的な暗号。例：A→D, B→E, C→F",
-  affine: "文字を数式(ax+b)で変換する暗号。Caesarの拡張版",
-  vigenere: "複数のCaesar暗号を組み合わせた多表式暗号。キーワードを使用",
-  playfair: "2文字ずつ5×5の表で置換する暗号。第一次世界大戦で使用",
+  caesar: "各文字を一定数ずらすもっとも基本的な暗号。例：A→D, B→E, C→F",
+  affine: "文字を数式(ax+b)で変換する暗号。シーザーの拡張版",
+  vigenere: "複数のシーザー暗号を組み合わせた多表式暗号。鍵にキーワードを使用",
+  playfair: "マトリクスを用いて2文字ずつ換字する暗号。",
   transposition: "文字の順番を入れ替える転置式暗号",
   adfgx: "第一次世界大戦でドイツが使用。文字をADFGX(V)のみで表現",
   substitution: "文字を別の文字に1対1で置き換える単純な換字式暗号",

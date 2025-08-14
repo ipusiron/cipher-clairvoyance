@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Sample ciphertexts for demonstration
 
 2. **Core Analysis Functions** (lines 26-250)
-   - Statistical analysis: IoC, Chi-square, englishness scoring
+   - Statistical analysis: IC, Chi-square, englishness scoring
    - Cipher-specific detection: Caesar/Affine brute force, Vigenère period detection (autocorrelation, Kasiski)
    - Column analysis for Vigenère with IC and Caesar shift estimation
 

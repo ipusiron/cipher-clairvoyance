@@ -13,6 +13,52 @@ export const gcd = (a,b)=> b?gcd(b,a%b):Math.abs(a);
 export const upper = s => (s||"").toUpperCase();
 export const toAZ = s => upper(s).replace(/[^A-Z]/g,"");
 
+// 入力文字列の検証
+export function validateCipherInput(input) {
+  if (!input || input.trim() === '') {
+    return { isValid: true, errors: [] };
+  }
+  
+  const errors = [];
+  
+  // 2バイト文字（日本語など）のチェック
+  const multiByte = input.match(/[^\x00-\x7F]/g);
+  if (multiByte) {
+    const uniqueChars = [...new Set(multiByte)].slice(0, 5); // 最初の5文字まで表示
+    const displayChars = uniqueChars.join(', ');
+    const moreCount = multiByte.length - uniqueChars.length;
+    const moreText = moreCount > 0 ? ` 他${moreCount}文字` : '';
+    errors.push(`日本語などの2バイト文字は対応していません: 「${displayChars}」${moreText}`);
+  }
+  
+  // 特殊記号のチェック（英字、数字、基本的な記号以外）
+  const invalidChars = input.match(/[^\w\s\.,;:!?\-'"()[\]{}]/g);
+  if (invalidChars) {
+    const uniqueChars = [...new Set(invalidChars)].slice(0, 5);
+    const displayChars = uniqueChars.join(', ');
+    const moreCount = invalidChars.length - uniqueChars.length;
+    const moreText = moreCount > 0 ? ` 他${moreCount}文字` : '';
+    errors.push(`対応していない特殊文字が含まれています: 「${displayChars}」${moreText}`);
+  }
+  
+  // 文字数チェック
+  if (input.length > 10000) {
+    errors.push(`入力文字数が上限（10,000文字）を超えています。現在: ${input.length}文字`);
+  }
+  
+  // 英字の割合チェック（警告レベル）
+  const letters = toAZ(input);
+  const letterRatio = input.length > 0 ? letters.length / input.length : 0;
+  if (letterRatio < 0.5 && input.length > 10) {
+    errors.push(`暗号文には英字の割合が少ないようです（${Math.round(letterRatio * 100)}%）。解析精度が低下する可能性があります。`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors: errors
+  };
+}
+
 // 文字頻度カウント
 export function countLetters(s){
   const f = new Array(26).fill(0);

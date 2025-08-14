@@ -3,15 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
   <title>Cipher Clairvoyance — 暗号解析ツール</title>
   <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式を自動判定する教育用ツール">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <header class="container header">
-    <div class="hero">
-      <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
-      <p class="subtitle">暗号文を入力すると、使われた暗号方式を自動判定します</p>
+  <header class="header">
+    <div class="container">
+      <div class="hero">
+        <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
+        <p class="subtitle">暗号文を入力すると、使われた暗号方式を自動判定します</p>
+      </div>
+      <button id="btnHelp" class="help-icon-btn" title="ヘルプを表示">?</button>
     </div>
   </header>
 
@@ -23,6 +31,12 @@
         <button id="btnSampleSelect" class="btn secondary sample-btn">📄 サンプル読み込み</button>
       </div>
       <textarea id="cipherText" rows="6" placeholder="解析したい暗号文を入力してください（英語のみ対応）"></textarea>
+      
+      <!-- エラーメッセージ表示エリア -->
+      <div id="inputError" class="input-error hidden">
+        <span class="error-icon">⚠️</span>
+        <span class="error-message"></span>
+      </div>
       
       <!-- オプション設定 -->
       <details class="options-detail">
@@ -41,7 +55,7 @@
             <label><input type="checkbox" id="chkVigAutoKasiski" checked> Vigenère周期検出</label>
             <label><input type="checkbox" id="chkVigColumns" checked> Vigenère列分析</label>
             <label><input type="checkbox" id="chkPlayfair" checked> Playfair検出</label>
-            <label><input type="checkbox" id="chkTransposition" checked> 転置暗号検出</label>
+            <label><input type="checkbox" id="chkTransposition" checked> 転置式暗号検出</label>
             <label><input type="checkbox" id="chkADFGX" checked> ADFGX(VX)検出</label>
           </div>
         </div>
@@ -82,11 +96,12 @@
         </div>
       </div>
 
-      <!-- 詳細表示トグル -->
-      <div class="detail-toggle">
-        <button id="toggleDetails" class="btn secondary">📊 詳細な分析を見る</button>
-      </div>
     </section>
+
+    <!-- 詳細表示トグル -->
+    <div class="toggle-section hidden">
+      <button id="toggleDetails" class="toggle-btn">📊 詳細な分析を見る</button>
+    </div>
 
     <!-- 詳細分析（初期は非表示） -->
     <section id="detailsSection" class="hidden">
@@ -112,51 +127,51 @@
         <div class="card detail-card">
           <h3>
             <span class="help-icon" title="Vigenère暗号などの周期性を持つ暗号を検出する分析手法">ℹ️</span>
-            周期性分析（Vigenère暗号の検出）
+            周期性分析（ヴィジュネル暗号の検出）
           </h3>
           
-          <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 3px solid #3b82f6;">
-            <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">なぜ周期性を調べるのか？</h4>
-            <p style="margin: 0; color: #64748b; line-height: 1.5;">
-              Vigenère暗号は「CIPHER」のようなキーワードを繰り返し使って暗号化します。
+          <div class="info-box info-box-blue">
+            <h4>なぜ周期性を調べるのか？</h4>
+            <p>
+              ヴィジュネル暗号は「CIPHER」のようなキーワードを繰り返し使って暗号化します。
               キーワードが繰り返されるため、暗号文にも規則的なパターンが現れます。
-              この「周期性」を見つけることで、Vigenère暗号であることや鍵の長さを推定できます。
+              この「周期性」を見つけることで、ヴィジュネル暗号であることや鍵の長さを推定できます。
             </p>
           </div>
           
           <div class="period-analysis">
             <div class="analysis-item">
               <h4>自己相関分析</h4>
-              <div style="margin-bottom: 1rem;">
-                <p class="help-text" style="margin-bottom: 0.5rem;"><strong>何をしているか：</strong></p>
-                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+              <div class="analysis-description">
+                <p class="analysis-label"><strong>何をしているか：</strong></p>
+                <p class="analysis-text">
                   暗号文を少しずつずらして、元の文字と一致する割合を計算します。
-                  Vigenère暗号では、鍵の長さの倍数でずらしたときに一致率が高くなります。
+                  ヴィジュネル暗号では、鍵の長さの倍数でずらしたときに一致率が高くなります。
                 </p>
-                <p class="help-text"><strong>グラフの見方：</strong> 高い棒グラフが現れる位置が鍵長の手がかり</p>
+                <p class="analysis-note"><strong>グラフの見方：</strong> 高い棒グラフが現れる位置が鍵長の手がかり</p>
               </div>
               <svg id="acSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
             </div>
             
             <div class="analysis-item">
-              <h4>Kasiski分析</h4>
-              <div style="margin-bottom: 1rem;">
-                <p class="help-text" style="margin-bottom: 0.5rem;"><strong>何をしているか：</strong></p>
-                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+              <h4>カシスキー法による分析</h4>
+              <div class="analysis-description">
+                <p class="analysis-label"><strong>何をしているか：</strong></p>
+                <p class="analysis-text">
                   暗号文の中で同じ文字列が繰り返し現れる箇所を探し、その間隔を調べます。
-                  Vigenère暗号では、これらの間隔が鍵の長さの倍数になる傾向があります。
+                  ヴィジュネル暗号では、これらの間隔が鍵の長さの倍数になる傾向があります。
                 </p>
-                <p class="help-text"><strong>グラフの見方：</strong> よく現れる間隔が鍵長の候補</p>
+                <p class="analysis-note"><strong>グラフの見方：</strong> よく現れる間隔が鍵長の候補</p>
               </div>
               <svg id="gcdSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
             </div>
           </div>
           
-          <div style="margin-top: 1rem; padding: 1rem; background: #fff7ed; border-radius: 8px; border-left: 3px solid #f59e0b;">
-            <h4 style="margin: 0 0 0.5rem 0; color: #92400e;">💡 分析結果の読み方</h4>
-            <ul style="margin: 0; padding-left: 1.2rem; color: #92400e; font-size: 0.9rem;">
-              <li style="margin-bottom: 0.25rem;">両方のグラフで同じ数値（例：6, 12, 18など）に高い値が出る場合、その数値が鍵長の可能性が高い</li>
-              <li style="margin-bottom: 0.25rem;">単発暗号（Caesar、Affineなど）では明確なピークは現れません</li>
+          <div class="info-box info-box-orange">
+            <h4>💡 分析結果の読み方</h4>
+            <ul>
+              <li>両方のグラフで同じ数値（例：6, 12, 18など）に高い値が出る場合、その数値が鍵長の可能性が高い</li>
+              <li>単発暗号（シーザー暗号、アフィン暗号など）では明確なピークは現れません</li>
               <li>ランダムなテキストでも偶然のピークが出ることがあります</li>
             </ul>
           </div>
@@ -167,19 +182,11 @@
           </div>
         </div>
 
-        <!-- 繰り返しパターン -->
-        <div class="card detail-card">
-          <h3>
-            <span class="help-icon" title="暗号文中の繰り返しパターン">ℹ️</span>
-            繰り返しパターン分析
-          </h3>
-          <div id="repeats" class="repeats-table"></div>
-        </div>
       </div>
 
       <!-- 専門家向け表示トグル -->
-      <div class="card">
-        <button id="toggleAdvanced" class="btn secondary">🔬 専門家向け分析を見る</button>
+      <div class="toggle-section hidden">
+        <button id="toggleAdvanced" class="toggle-btn">🔬 専門家向け分析を見る</button>
       </div>
     </section>
 
@@ -187,7 +194,7 @@
 
   <footer>
     <div class="footer">
-      🔗 GitHubリポジトリはこちら（ <a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank">ipusiron/cipher-clairvoyance</a> ）
+      🔗 GitHubリポジトリはこちら（ <a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank" rel="noopener noreferrer">ipusiron/cipher-clairvoyance</a> ）
     </div>
   </footer>
 
@@ -205,6 +212,21 @@
         </p>
         <div id="sampleList" class="sample-list">
           <!-- サンプルリストはJSで動的生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ヘルプモーダル -->
+  <div id="helpModal" class="modal hidden">
+    <div class="modal-content help-modal-content">
+      <div class="modal-header">
+        <h3>❓ Cipher Clairvoyance ヘルプ</h3>
+        <button id="helpModalClose" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body help-modal-body">
+        <div class="help-content">
+          <!-- Help content will be loaded dynamically -->
         </div>
       </div>
     </div>

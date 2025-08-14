@@ -2,6 +2,18 @@
 
 import { clamp01 } from './utils.js';
 
+// 暗号名の日本語表記マッピング
+const CIPHER_NAMES_JP = {
+  caesar: 'シーザー暗号',
+  affine: 'アフィン暗号', 
+  vigenere: 'ヴィジュネル暗号',
+  playfair: 'プレイフェア暗号',
+  transposition: '転置式暗号',
+  adfgx: 'ADFGX暗号',
+  substitution: '換字式暗号',
+  unknown: '不明'
+};
+
 // 各暗号方式の判定根拠を生成
 export function generateEvidence(results) {
   const evidences = [];
@@ -20,10 +32,10 @@ export function generateEvidence(results) {
       title: '統計的特徴',
       items: [
         {
-          metric: 'IoC (一致指数)',
+          metric: 'IC (一致指数)',
           value: stats.ioc,
-          analysis: getIoCAnalysis(ioc),
-          confidence: getIoCConfidence(ioc)
+          analysis: getICAnalysis(ioc),
+          confidence: getICConfidence(ioc)
         },
         {
           metric: 'χ² 統計量',
@@ -44,7 +56,7 @@ export function generateEvidence(results) {
   // 勝者暗号の特定根拠
   evidences.push({
     type: 'cipher-specific',
-    title: `${winner.type.charAt(0).toUpperCase() + winner.type.slice(1)}暗号の判定根拠`,
+    title: `${CIPHER_NAMES_JP[winner.type] || winner.type}の判定根拠`,
     items: getCipherSpecificEvidence(winner.type, results)
   });
 
@@ -61,24 +73,24 @@ export function generateEvidence(results) {
   return evidences;
 }
 
-// IoC分析
-function getIoCAnalysis(ioc) {
-  if (ioc > 0.06) return '英語の標準値(0.066)に近く、単一置換暗号の可能性が高い';
-  if (ioc > 0.04) return '英語より低く、多表式暗号や転置暗号の可能性';
+// IC分析
+function getICAnalysis(ioc) {
+  if (ioc > 0.06) return '英語の標準値(0.066)に近く、単一換字式暗号の可能性が高い';
+  if (ioc > 0.04) return '英語より低く、多表式暗号や転置式暗号の可能性';
   return '非常に低く、複雑な暗号化または非英語テキストの可能性';
 }
 
-function getIoCConfidence(ioc) {
+function getICConfidence(ioc) {
   return Math.abs(ioc - 0.066) < 0.01 ? 'high' : 
          Math.abs(ioc - 0.066) < 0.02 ? 'medium' : 'low';
 }
 
 // χ²分析
 function getChi2Analysis(chi2) {
-  if (chi2 < 20) return '英語の文字頻度に非常に近く、単一置換暗号の可能性が高い';
+  if (chi2 < 20) return '英語の文字頻度に非常に近く、単一換字式暗号の可能性が高い';
   if (chi2 < 50) return '英語の文字頻度にやや近く、単純な暗号の可能性';
   if (chi2 < 100) return '英語の文字頻度から乖離、複雑な暗号の可能性';
-  return '英語の文字頻度から大きく乖離、転置暗号や多表式暗号の可能性';
+  return '英語の文字頻度から大きく乖離、転置式暗号や多表式暗号の可能性';
 }
 
 function getChi2Confidence(chi2) {
@@ -87,10 +99,10 @@ function getChi2Confidence(chi2) {
 
 // 英語らしさ分析
 function getEnglishnessAnalysis(percent) {
-  if (percent > 80) return '非常に英語らしく、転置暗号の可能性が高い';
-  if (percent > 50) return 'やや英語らしく、部分的に復号済みまたは転置暗号';
-  if (percent > 20) return '英語らしさが低く、置換暗号の可能性';
-  return '英語らしさが非常に低く、強力な置換暗号または多表式暗号';
+  if (percent > 80) return '非常に英語らしく、転置式暗号の可能性が高い';
+  if (percent > 50) return 'やや英語らしく、部分的に復号済みまたは転置式暗号';
+  if (percent > 20) return '英語らしさが低く、換字式暗号の可能性';
+  return '英語らしさが非常に低く、強力な換字式暗号または多表式暗号';
 }
 
 function getEnglishnessConfidence(percent) {
@@ -106,7 +118,7 @@ function getCipherSpecificEvidence(cipherType, results) {
     case 'caesar':
       items.push({
         evidence: 'シーザー暗号の特徴',
-        description: `シフト量${results.stats.caesarShift}で最も良い統計値を示した`,
+        description: `シフト量${results.stats.caesarShift}でもっとも良い統計値を示した`,
         strength: prob > 70 ? 'strong' : prob > 40 ? 'medium' : 'weak'
       });
       if (results.stats.chi2 && parseFloat(results.stats.chi2) < 30) {
@@ -121,7 +133,7 @@ function getCipherSpecificEvidence(cipherType, results) {
     case 'affine':
       items.push({
         evidence: 'アフィン暗号の特徴',
-        description: `パラメータ${results.stats.affineParams}で最適な復号結果`,
+        description: `パラメーター${results.stats.affineParams}で最適な復号結果`,
         strength: prob > 70 ? 'strong' : prob > 40 ? 'medium' : 'weak'
       });
       break;
@@ -165,7 +177,7 @@ function getCipherSpecificEvidence(cipherType, results) {
       if (results.stats.englishness && parseInt(results.stats.englishness) > 60) {
         items.push({
           evidence: '高い英語らしさ',
-          description: '転置暗号は元の文字頻度を保持する',
+          description: '転置式暗号は元の文字頻度を保持する',
           strength: 'strong'
         });
       }
@@ -208,7 +220,7 @@ function getExcludedCiphers(results) {
     const percentage = Math.round(prob * 100);
     if (percentage < 20) {
       excluded.push({
-        cipher: type.charAt(0).toUpperCase() + type.slice(1),
+        cipher: CIPHER_NAMES_JP[type] || type,
         reason: getExclusionReason(type, results),
         probability: percentage
       });
@@ -241,7 +253,7 @@ function getExclusionReason(cipherType, results) {
     
     case 'transposition':
       return stats.englishness && parseInt(stats.englishness) < 40 ?
-        '英語らしさが低すぎる（転置暗号は高い英語らしさを保持）' : '統計的特徴が不一致';
+        '英語らしさが低すぎる（転置式暗号は高い英語らしさを保持）' : '統計的特徴が不一致';
     
     default:
       return '他の暗号方式により強い特徴が見つかった';

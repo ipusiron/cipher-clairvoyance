@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- 千里眼のグラデーション -->
+    <radialGradient id="eyeGrad" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0%" style="stop-color:#93C5FD;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="80%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- 瞳のグラデーション -->
+    <radialGradient id="pupilGrad" cx="0.3" cy="0.3" r="0.8">
+      <stop offset="0%" style="stop-color:#1F2937;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- 光彩効果 -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- 外側の目の形 (アーモンド型) -->
+  <ellipse cx="16" cy="16" rx="14" ry="9" fill="url(#eyeGrad)" stroke="#1E3A8A" stroke-width="1"/>
+  
+  <!-- 虹彩 -->
+  <ellipse cx="16" cy="16" rx="8" ry="8" fill="url(#eyeGrad)" opacity="0.9"/>
+  
+  <!-- 瞳孔 -->
+  <circle cx="16" cy="16" r="4" fill="url(#pupilGrad)"/>
+  
+  <!-- ハイライト -->
+  <ellipse cx="14" cy="13" rx="2" ry="3" fill="#E0E7FF" opacity="0.8"/>
+  <circle cx="13" cy="12" r="1" fill="#FFFFFF" opacity="0.9"/>
+  
+  <!-- 千里眼の神秘的な光 -->
+  <circle cx="16" cy="16" r="12" fill="none" stroke="#60A5FA" stroke-width="0.5" opacity="0.4" filter="url(#glow)"/>
+  <circle cx="16" cy="16" r="16" fill="none" stroke="#93C5FD" stroke-width="0.3" opacity="0.2"/>
+  
+  <!-- 古代文字風の装飾 -->
+  <text x="5" y="8" font-family="serif" font-size="4" fill="#4B5563" opacity="0.6">◯</text>
+  <text x="25" y="10" font-family="serif" font-size="4" fill="#4B5563" opacity="0.6">△</text>
+  <text x="3" y="26" font-family="serif" font-size="4" fill="#4B5563" opacity="0.6">◇</text>
+  <text x="27" y="28" font-family="serif" font-size="4" fill="#4B5563" opacity="0.6">☆</text>
+</svg>

@@ -8,14 +8,103 @@ import {
   updateConfidenceBar 
 } from './visualization.js';
 import { generateEvidence } from './evidence.js';
+import { validateCipherInput } from './utils.js';
+
+// 暗号名の日本語表記マッピング
+const CIPHER_NAMES_JP = {
+  caesar: 'シーザー暗号',
+  affine: 'アフィン暗号', 
+  vigenere: 'ヴィジュネル暗号',
+  playfair: 'プレイフェア暗号',
+  transposition: '転置式暗号',
+  adfgx: 'ADFGX暗号',
+  substitution: '換字式暗号',
+  unknown: '不明'
+};
+
+// 暗号解読ツールのリンクを更新
+function updateCipherToolLinks(cipherType) {
+  let toolLinksContainer = document.getElementById('toolLinks');
+  
+  // コンテナが存在しない場合は作成
+  if (!toolLinksContainer) {
+    toolLinksContainer = document.createElement('div');
+    toolLinksContainer.id = 'toolLinks';
+    toolLinksContainer.style.cssText = 'margin-top: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;';
+    
+    const toggleDetails = document.getElementById('toggleDetails');
+    if (toggleDetails) {
+      toggleDetails.insertAdjacentElement('beforebegin', toolLinksContainer);
+    } else {
+      // フォールバック: evidenceSectionの後
+      const evidenceSection = document.getElementById('evidenceSection');
+      if (evidenceSection) {
+        evidenceSection.insertAdjacentElement('afterend', toolLinksContainer);
+      } else {
+        // 最終フォールバック
+        const mainResult = document.getElementById('mainResult');
+        if (mainResult) {
+          mainResult.appendChild(toolLinksContainer);
+        }
+      }
+    }
+  } else {
+  }
+  
+  // リンクをクリア
+  toolLinksContainer.innerHTML = '';
+  
+  if (cipherType === 'caesar') {
+    toolLinksContainer.innerHTML = `
+      <div class="tool-header">
+        🔧 解読ツール
+      </div>
+      <div class="tool-description">
+        シーザー暗号の自動解読には、総当り攻撃と頻出語検索が効果的です：
+      </div>
+      <a href="https://ipusiron.github.io/caesar-cipher-breaker/" 
+         target="_blank" 
+         rel="noopener noreferrer"
+         class="tool-link">
+        <span>🔓</span>
+        <span>Caesar Cipher Breaker で解読</span>
+        <span class="tool-link-icon">↗</span>
+      </a>
+    `;
+  } else if (cipherType === 'vigenere') {
+    toolLinksContainer.innerHTML = `
+      <div class="tool-header">
+        🔧 解析ツール
+      </div>
+      <div class="tool-description">
+        ヴィジュネル暗号の鍵長推定には、反復文字列の検出が重要です：
+      </div>
+      <a href="https://ipusiron.github.io/repeatseq-analyzer/" 
+         target="_blank" 
+         rel="noopener noreferrer"
+         class="tool-link">
+        <span>🔍</span>
+        <span>RepeatSeq Analyzer で鍵長推定</span>
+        <span class="tool-link-icon">↗</span>
+      </a>
+    `;
+  } else {
+    // 表示するツールがない場合は枠を隠す
+    toolLinksContainer.style.display = 'none';
+    return;
+  }
+  
+  // 表示するツールがある場合は枠を表示
+  toolLinksContainer.style.display = 'block';
+}
 
 // メイン結果の更新
 export function updateMainResult(winner) {
   const mainResult = document.getElementById('mainResult');
   mainResult.classList.remove('hidden');
   
-  const winnerName = winner.type.charAt(0).toUpperCase() + winner.type.slice(1);
-  document.getElementById('winnerName').textContent = `${winnerName}暗号`;
+  const winnerName = CIPHER_NAMES_JP[winner.type] || winner.type;
+  document.getElementById('winnerName').textContent = winnerName;
   document.getElementById('winnerDesc').textContent = winner.description;
   
   updateConfidenceBar(winner.probability);
@@ -37,8 +126,8 @@ export function updateOtherPossibilities(probabilities, winner) {
       const chip = document.createElement('div');
       chip.className = 'possibility-chip';
       chip.innerHTML = `
-        <span>${type.charAt(0).toUpperCase() + type.slice(1)}</span>
-        <span class="percentage">${percentage}%</span>
+        <span>${CIPHER_NAMES_JP[type] || type}</span>
+        <span class="percentage" style="font-weight: 600; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; color: #3b82f6;">${percentage}%</span>
       `;
       container.appendChild(chip);
     }
@@ -52,7 +141,7 @@ export function updateBasicStats(stats) {
   
   const statItems = [
     { label: '文字数', value: stats.length },
-    { label: 'IoC (重複度)', value: stats.ioc, help: '文字の重複度。英語は約0.066' },
+    { label: 'IC (重複度)', value: stats.ioc, help: '文字の重複度。英語は約0.066' },
     { label: 'χ² 統計量', value: stats.chi2, help: '英語との頻度差。小さいほど英語に近い' },
     { label: '英語らしさ', value: stats.englishness }
   ];
@@ -79,6 +168,35 @@ export function showError(message) {
   document.getElementById('winnerDesc').textContent = message;
   document.getElementById('confidenceLevel').style.width = '0%';
   document.getElementById('confidenceText').textContent = '0%';
+}
+
+// 入力エラーメッセージの表示・非表示
+export function showInputError(errors) {
+  const errorDiv = document.getElementById('inputError');
+  const errorMessage = errorDiv.querySelector('.error-message');
+  const textarea = document.getElementById('cipherText');
+  
+  if (errors.length > 0) {
+    // エラーメッセージを表示
+    errorMessage.textContent = errors.join(' ');
+    errorDiv.classList.remove('hidden');
+    textarea.classList.add('error');
+  } else {
+    // エラーメッセージを非表示
+    errorDiv.classList.add('hidden');
+    textarea.classList.remove('error');
+  }
+}
+
+// リアルタイム入力検証
+export function validateInput() {
+  const textarea = document.getElementById('cipherText');
+  const input = textarea.value;
+  
+  const validation = validateCipherInput(input);
+  showInputError(validation.errors);
+  
+  return validation.isValid;
 }
 
 // 判定根拠の表示
@@ -155,6 +273,13 @@ export function updateUI(analysis) {
   // 判定根拠を更新
   updateEvidence(results);
   
+  // 解析ツールリンクを表示
+  updateCipherToolLinks(results.winner.type);
+  
+  // 詳細分析ボタンのセクションを表示
+  const toggleSections = document.querySelectorAll('.toggle-section');
+  toggleSections.forEach(section => section.classList.remove('hidden'));
+  
   // 基本統計を更新
   if (results.stats) {
     updateBasicStats(results.stats);
@@ -191,10 +316,17 @@ export function clearForm() {
   document.getElementById('mainResult').classList.add('hidden');
   document.getElementById('detailsSection').classList.add('hidden');
   
+  // 詳細分析ボタンのセクションも非表示にする
+  const toggleSections = document.querySelectorAll('.toggle-section');
+  toggleSections.forEach(section => section.classList.add('hidden'));
+  
   const advancedSection = document.getElementById('advancedSection');
   if (advancedSection) {
     advancedSection.classList.add('hidden');
   }
+  
+  // エラーメッセージもクリア
+  showInputError([]);
   
   // ボタンテキストをリセット
   resetToggleButtons();
@@ -219,6 +351,7 @@ export function updateButtonStates() {
   const cipherText = document.getElementById('cipherText');
   const btnAnalyze = document.getElementById('btnAnalyze');
   const btnClear = document.getElementById('btnClear');
+  
   
   if (cipherText && btnAnalyze && btnClear) {
     const hasText = cipherText.value.trim().length > 0;
