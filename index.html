@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cipher Clairvoyance — Classical Cipher Identification & Visualization</title>
+  <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式推定・可視化ツール（教育用UIつき）">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="container header">
+    <div class="hero">
+      <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
+      <p class="subtitle">Classical Cipher Identification & Visualization（方式推定・可視化・学習UI）</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 入力とオプション -->
+    <section class="card">
+      <div class="controls">
+        <label for="cipherText" class="label">暗号文</label>
+        <textarea id="cipherText" rows="8" placeholder="英語前提。数字・記号・空白を含んでいてもOK（解析はA–Zのみ）"></textarea>
+
+        <div class="row">
+          <div class="col">
+            <h3>前処理オプション</h3>
+            <div class="checks">
+              <label><input type="checkbox" id="chkStripNonLetters" checked> 解析は A–Z のみ使用（数字・記号は解析から除外）</label>
+              <label><input type="checkbox" id="chkPreserveSpaces" checked> スペースは表示に残す（解析は除外）</label>
+              <label><input type="checkbox" id="chkDetectNumeric" checked> 数字系暗号検出（Baconian / Polybius / Nihilist）を有効化</label>
+              <label><input type="checkbox" id="chkShowSanitized" checked> サニタイズプレビューを表示（除外文字を淡色表示）</label>
+            </div>
+
+            <h3 class="mt16">判定手法（実行するものにチェック）</h3>
+            <div class="checks">
+              <label><input type="checkbox" id="chkBasic" checked> 基本統計（IoC / χ² / 文字集合 / 英語らしさ）</label>
+              <label><input type="checkbox" id="chkCaesarAffine" checked> Caesar / Affine 総当り</label>
+              <label><input type="checkbox" id="chkVigAutoKasiski" checked> Vigenère 周期候補（AutoCorr / Kasiski）</label>
+              <label><input type="checkbox" id="chkVigColumns" checked> Vigenère 列解析（列IC＋列Caesar）</label>
+              <label><input type="checkbox" id="chkPlayfair" checked> Playfair 疑い検査</label>
+              <label><input type="checkbox" id="chkTransposition" checked> 転置疑い（単字χ² vs n-gram英語らしさ）</label>
+              <label><input type="checkbox" id="chkADFGX" checked> ADFGX / ADFGVX 検出</label>
+            </div>
+          </div>
+
+          <div class="col">
+            <h3>サンプル</h3>
+            <select id="sampleSelect">
+              <option value="">-- サンプルを選択 --</option>
+              <option value="VIG">Vigenère（LEMON）: LXFOPVEFRNHR</option>
+              <option value="CAESAR">Caesar(+3) “HELLOWORLD” → KHOOR ZRUOG</option>
+              <option value="AFFINE">Affine(a=5,b=8) → IHHWVC SWFRCP</option>
+              <option value="PLAYFAIR">Playfair → BMODZBXDNABEKUDMUIXMMOUVIF</option>
+              <option value="COLUMNAR">Columnar → WECRL TEERD SOEEF EAOCA IVDEN</option>
+              <option value="ADFGX">ADFGX set → ADFGADXGAFDGXAFDG</option>
+              <option value="BACON">Baconian（A/Bのみ）→ ABAAB BAABB AABAA ABBBA ABBAB</option>
+              <option value="POLYBIUS">Polybius（数字ペア）→ 23 44 15 42 ...</option>
+              <option value="NIHILIST">Nihilist（数字列）→ 73 21 09 44 ...</option>
+            </select>
+            <button id="btnLoadSample" class="btn secondary">読み込む</button>
+
+            <div id="sanitizedPreview" class="preview mt16" hidden></div>
+
+            <div class="actions mt16">
+              <button id="btnAnalyze" class="btn primary">解析</button>
+              <button id="btnClear" class="btn">クリア</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 確率リング -->
+    <section class="card">
+      <h2>推定結果（確率リング）</h2>
+      <div id="resultSummary" class="result-summary empty">結果はここに表示されます。</div>
+    </section>
+
+    <!-- 可視化：統計/周期/列 -->
+    <section class="card">
+      <h2>根拠と可視化</h2>
+      <div id="details"></div>
+
+      <div class="viz-grid mt16">
+        <div>
+          <h4>単文字頻度（観測 vs 英語期待）</h4>
+          <svg id="freqChart" class="spark" viewBox="0 0 520 180" preserveAspectRatio="none"></svg>
+        </div>
+        <div>
+          <h4>オートコリレーション</h4>
+          <svg id="acSpark" class="spark" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
+          <div id="acAlign" class="preview mt8">バーをクリックすると、原文と t シフトの一致が表示されます。</div>
+        </div>
+        <div>
+          <h4>Kasiski GCDヒスト</h4>
+          <svg id="gcdSpark" class="spark" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
+        </div>
+        <div>
+          <h4>列ICヒート（最有力 k）</h4>
+          <svg id="icHeat" class="heat" viewBox="0 0 400 36" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kasiski：反復n-gram表 -->
+    <section class="card">
+      <h2>Kasiski 反復 n-gram（クリックで原文ハイライト）</h2>
+      <div id="repeats"></div>
+    </section>
+
+    <!-- Vigenère ラボ -->
+    <section class="card">
+      <h2>Vigenère ラボ（列分割・列Caesar・暫定復号）</h2>
+      <div id="vigLab"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer">
+      🔗 GitHub: <a href="https://github.com/yourname/cipher-clairvoyance" target="_blank">yourname/cipher-clairvoyance</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
