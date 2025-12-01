@@ -1,3 +1,40 @@
+<!--
+---
+id: day044
+slug: cipher-clairvoyance
+
+title: "Cipher Clairvoyance"
+
+subtitle_ja: "暗号化方式推定ツール"
+subtitle_en: "Classical Cipher Identification Tool"
+
+description_ja: "暗号文から用いられた古典暗号を推定・特定する教育用Webツール。シーザー暗号、アフィン暗号、ヴィジュネル暗号、プレイフェア暗号、転置式暗号、ADFGX暗号に対応し、統計分析と可視化で暗号方式を判定します。"
+description_en: "An educational web tool that identifies classical ciphers from ciphertext. Supports Caesar, Affine, Vigenère, Playfair, Transposition, and ADFGX ciphers using statistical analysis and visualization."
+
+category_ja:
+  - 古典暗号
+  - 暗号解析
+category_en:
+  - Classical Cryptography
+  - Cryptanalysis
+
+difficulty: 4
+
+tags:
+  - classical-cipher
+  - cryptanalysis
+  - statistics
+  - visualization
+  - CTF
+  - educational
+
+repo_url: "https://github.com/ipusiron/cipher-clairvoyance"
+demo_url: "https://ipusiron.github.io/cipher-clairvoyance/"
+
+hub: true
+---
+-->
+
 # Cipher Clairvoyance - 暗号化方式推定ツール
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/ipusiron/cipher-clairvoyance?style=social)
@@ -9,8 +46,7 @@
 
 **Day044 - 生成AIで作るセキュリティツール100**
 
-**Classical Cipher Identification & Visualization**  
-暗号文から用いられた古典暗号を推定・特定する教育用Webツールです。
+Cipher Clairvoyanceは、暗号文から用いられた古典暗号を推定・特定する教育用Webツールです。
 
 ES6モジュール化されたモダンなアーキテクチャと豊富な可視化機能により、初心者から専門家まで幅広く古典暗号の学習・解析を支援します。
 
