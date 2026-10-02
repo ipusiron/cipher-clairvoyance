@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="Content-Security-Policy" 
+  <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
   <title>Cipher Clairvoyance — 暗号解析ツール</title>
   <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式を自動判定する教育用ツール">
@@ -19,177 +19,124 @@
         <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
         <p class="subtitle">暗号文を入力すると、使われた暗号方式を自動判定します</p>
       </div>
-      <button id="btnHelp" class="help-icon-btn" title="ヘルプを表示">?</button>
+      <button id="btnHelp" class="help-icon-btn" type="button" aria-label="ヘルプを開く">?</button>
     </div>
   </header>
 
   <main class="container">
     <!-- 入力エリア -->
-    <section class="card">
+    <section class="card" aria-labelledby="inputTitle">
       <div class="input-header">
-        <h2>① 暗号文を入力</h2>
-        <button id="btnSampleSelect" class="btn secondary sample-btn">📄 サンプル読み込み</button>
+        <h2 id="inputTitle">① 暗号文を入力</h2>
+        <button id="btnSampleSelect" class="btn secondary sample-btn" type="button">📄 サンプル読み込み</button>
       </div>
-      <textarea id="cipherText" rows="6" placeholder="解析したい暗号文を入力してください（英語のみ対応）"></textarea>
-      
-      <!-- エラーメッセージ表示エリア -->
-      <div id="inputError" class="input-error hidden">
-        <span class="error-icon">⚠️</span>
+      <label for="cipherText" class="visually-hidden">暗号文</label>
+      <textarea id="cipherText" rows="6" spellcheck="false" autocomplete="off"
+                placeholder="解析したい暗号文を入力してください（英字 A〜Z で書かれた暗号文が対象です）"
+                aria-describedby="inputCount"></textarea>
+      <p id="inputCount" class="input-count"></p>
+
+      <!-- 解析できない理由（エラー）と、解析を続けたうえでのお知らせ -->
+      <div id="inputError" class="input-error hidden" role="alert">
+        <span class="error-icon" aria-hidden="true">⚠️</span>
         <span class="error-message"></span>
       </div>
-      
-      <!-- オプション設定 -->
-      <details class="options-detail">
-        <summary>⚙️ 詳細設定</summary>
-        <div class="options-content">
-          <h4>前処理</h4>
-          <div class="checks">
-            <label><input type="checkbox" id="chkStripNonLetters" checked> 英字以外を除外して解析</label>
-            <label><input type="checkbox" id="chkPreserveSpaces" checked> スペースは表示用に保持</label>
-          </div>
-          
-          <h4>解析手法</h4>
-          <div class="checks">
-            <label><input type="checkbox" id="chkBasic" checked> 基本統計</label>
-            <label><input type="checkbox" id="chkCaesarAffine" checked> Caesar/Affine総当り</label>
-            <label><input type="checkbox" id="chkVigAutoKasiski" checked> Vigenère周期検出</label>
-            <label><input type="checkbox" id="chkVigColumns" checked> Vigenère列分析</label>
-            <label><input type="checkbox" id="chkPlayfair" checked> Playfair検出</label>
-            <label><input type="checkbox" id="chkTransposition" checked> 転置式暗号検出</label>
-            <label><input type="checkbox" id="chkADFGX" checked> ADFGX(VX)検出</label>
-          </div>
-        </div>
-      </details>
-      
+      <ul id="inputNotes" class="input-notes hidden"></ul>
+
       <div class="action-area">
-        <button id="btnAnalyze" class="btn primary large" disabled>🔍 解析開始</button>
-        <button id="btnClear" class="btn" disabled>クリア</button>
+        <button id="btnAnalyze" class="btn primary large" type="button" disabled>🔍 解析開始</button>
+        <button id="btnClear" class="btn" type="button" disabled>クリア</button>
       </div>
+      <p class="hint">Ctrl＋Enter（Mac は ⌘＋Enter）でも解析できます。</p>
     </section>
 
     <!-- メイン結果 -->
-    <section id="mainResult" class="card result-card hidden">
-      <h2>② 解析結果</h2>
-      
-      <!-- シンプルな結果表示 -->
-      <div id="simpleResult" class="simple-result">
+    <section id="mainResult" class="card result-card hidden" aria-labelledby="resultTitle">
+      <h2 id="resultTitle">② 解析結果</h2>
+      <p id="staleNote" class="stale-note hidden" role="status"></p>
+
+      <div id="resultLive" class="simple-result" aria-live="polite">
         <div class="winner-cipher">
-          <div class="cipher-icon">🏆</div>
+          <div class="cipher-icon" aria-hidden="true">🏆</div>
           <div class="cipher-details">
-            <h3 id="winnerName">判定中...</h3>
+            <h3 id="winnerName"></h3>
             <p id="winnerDesc" class="description"></p>
-            <div class="confidence-bar">
+            <p id="measuredLabel" class="measured-label"></p>
+            <div class="confidence-bar" aria-hidden="true">
               <div id="confidenceLevel" class="confidence-fill"></div>
-              <span id="confidenceText" class="confidence-text">0%</span>
             </div>
+            <p id="confidenceText" class="confidence-text"></p>
+            <p id="measuredNote" class="measured-note"></p>
           </div>
         </div>
-        
+        <ul id="resultNotes" class="result-notes"></ul>
         <div class="other-possibilities" id="otherPossibilities"></div>
       </div>
 
       <!-- 判定根拠 -->
       <div class="evidence-section">
         <h3>🔍 判定根拠</h3>
-        <div id="evidenceContent" class="evidence-content">
-          <!-- 根拠はJSで動的生成 -->
-        </div>
+        <div id="evidenceContent" class="evidence-content"></div>
       </div>
 
+      <div id="toolLinks" class="tool-links hidden"></div>
     </section>
 
     <!-- 詳細表示トグル -->
     <div class="toggle-section hidden">
-      <button id="toggleDetails" class="toggle-btn">📊 詳細な分析を見る</button>
+      <button id="toggleDetails" class="toggle-btn" type="button" aria-expanded="false" aria-controls="detailsSection">📊 詳細な分析を見る</button>
     </div>
 
     <!-- 詳細分析（初期は非表示） -->
-    <section id="detailsSection" class="hidden">
-      <!-- 基本統計 -->
+    <section id="detailsSection" class="hidden" aria-label="詳細な分析">
       <div class="card detail-card">
-        <h3>
-          <span class="help-icon" title="暗号文の基本的な統計情報">ℹ️</span>
-          基本統計
-        </h3>
+        <h3>基本統計</h3>
         <div id="basicStats" class="stats-grid"></div>
-        
-        <!-- 文字頻度グラフ -->
+
         <div class="freq-chart-container">
           <h4>文字の出現頻度</h4>
-          <p class="help-text">青: 暗号文の頻度 / 灰: 英語の標準頻度</p>
-          <svg id="freqChart" class="freq-chart" viewBox="0 0 520 180"></svg>
+          <p class="help-text"><span class="legend legend-observed"></span>暗号文 <span class="legend legend-expected"></span>英語（学習用の英文での割合）</p>
+          <svg id="freqChart" class="freq-chart" viewBox="0 0 520 180" role="img" aria-label="文字の出現頻度のグラフ"></svg>
+          <details class="data-table">
+            <summary id="freqTableSummary">数値の表を見る</summary>
+            <div class="table-scroll"><table id="freqTable"></table></div>
+          </details>
         </div>
       </div>
 
-      <!-- 高度な分析（初期は非表示） -->
-      <div id="advancedSection" class="hidden">
-        <!-- 周期性分析 -->
-        <div class="card detail-card">
-          <h3>
-            <span class="help-icon" title="Vigenère暗号などの周期性を持つ暗号を検出する分析手法">ℹ️</span>
-            周期性分析（ヴィジュネル暗号の検出）
-          </h3>
-          
-          <div class="info-box info-box-blue">
-            <h4>なぜ周期性を調べるのか？</h4>
-            <p>
-              ヴィジュネル暗号は「CIPHER」のようなキーワードを繰り返し使って暗号化します。
-              キーワードが繰り返されるため、暗号文にも規則的なパターンが現れます。
-              この「周期性」を見つけることで、ヴィジュネル暗号であることや鍵の長さを推定できます。
+      <div class="card detail-card">
+        <h3>周期性分析（ヴィジュネル暗号の鍵長）</h3>
+        <div class="info-box info-box-blue">
+          <h4>なぜ周期性を調べるのか</h4>
+          <p>
+            ヴィジュネル暗号はキーワードを繰り返して使うので、鍵の長さごとに同じずらし方が戻ってきます。
+            文字を鍵長ごとの列に分けると、各列は1つのシーザー暗号になり、一致指数（IC）が英文並みに上がります。
+          </p>
+        </div>
+
+        <div class="period-analysis">
+          <div class="analysis-item">
+            <h4>周期ごとの一致指数（IC）</h4>
+            <p class="analysis-text">
+              周期 k ごとに文字を k 列に分け、列ごとの IC を平均した値です。点線は鍵長と見なす目安（0.058）です。
+              鍵長の倍数でも同じように高くなります。
             </p>
+            <svg id="periodChart" class="mini-chart" viewBox="0 0 400 120" role="img" aria-label="周期ごとの一致指数のグラフ"></svg>
+            <p id="keyLengthInfo" class="analysis-note"></p>
           </div>
-          
-          <div class="period-analysis">
-            <div class="analysis-item">
-              <h4>自己相関分析</h4>
-              <div class="analysis-description">
-                <p class="analysis-label"><strong>何をしているか：</strong></p>
-                <p class="analysis-text">
-                  暗号文を少しずつずらして、元の文字と一致する割合を計算します。
-                  ヴィジュネル暗号では、鍵の長さの倍数でずらしたときに一致率が高くなります。
-                </p>
-                <p class="analysis-note"><strong>グラフの見方：</strong> 高い棒グラフが現れる位置が鍵長の手がかり</p>
-              </div>
-              <svg id="acSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
-            </div>
-            
-            <div class="analysis-item">
-              <h4>カシスキー法による分析</h4>
-              <div class="analysis-description">
-                <p class="analysis-label"><strong>何をしているか：</strong></p>
-                <p class="analysis-text">
-                  暗号文の中で同じ文字列が繰り返し現れる箇所を探し、その間隔を調べます。
-                  ヴィジュネル暗号では、これらの間隔が鍵の長さの倍数になる傾向があります。
-                </p>
-                <p class="analysis-note"><strong>グラフの見方：</strong> よく現れる間隔が鍵長の候補</p>
-              </div>
-              <svg id="gcdSpark" class="mini-chart" viewBox="0 0 400 60"></svg>
-            </div>
-          </div>
-          
-          <div class="info-box info-box-orange">
-            <h4>💡 分析結果の読み方</h4>
-            <ul>
-              <li>両方のグラフで同じ数値（例：6, 12, 18など）に高い値が出る場合、その数値が鍵長の可能性が高い</li>
-              <li>単発暗号（シーザー暗号、アフィン暗号など）では明確なピークは現れません</li>
-              <li>ランダムなテキストでも偶然のピークが出ることがあります</li>
-            </ul>
-          </div>
-          
-          <div id="vigDetails" class="vig-details hidden">
-            <h4>推定された鍵長での列分析</h4>
-            <div id="vigColumns" class="vig-columns"></div>
+
+          <div class="analysis-item">
+            <h4>カシスキー法（補助）</h4>
+            <p class="analysis-text">
+              同じ3文字の並びが繰り返し現れる間隔を調べ、その間隔を割り切る周期ごとに数えます。
+              ヴィジュネル暗号では、鍵長とその約数の棒が高くなる傾向があります。
+            </p>
+            <svg id="kasiskiChart" class="mini-chart" viewBox="0 0 400 120" role="img" aria-label="カシスキー法の集計のグラフ"></svg>
+            <p id="kasiskiInfo" class="analysis-note"></p>
           </div>
         </div>
-
-      </div>
-
-      <!-- 専門家向け表示トグル -->
-      <div class="toggle-section hidden">
-        <button id="toggleAdvanced" class="toggle-btn">🔬 専門家向け分析を見る</button>
       </div>
     </section>
-
   </main>
 
   <footer>
@@ -199,35 +146,30 @@
   </footer>
 
   <!-- サンプル選択モーダル -->
-  <div id="sampleModal" class="modal hidden">
+  <div id="sampleModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sampleTitle">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>📄 サンプル暗号文を選択</h3>
-        <button id="modalClose" class="modal-close">&times;</button>
+        <h3 id="sampleTitle">📄 サンプル暗号文を選択</h3>
+        <button id="modalClose" class="modal-close" type="button" aria-label="閉じる">&times;</button>
       </div>
       <div class="modal-body">
         <p class="modal-description">
-          各暗号方式のサンプル暗号文から選択してください。<br>
-          アメリカ独立宣言の一部を各種暗号で暗号化したものです。
+          アメリカ独立宣言（1776年）の冒頭を、各方式で暗号化したものです。名前を押すと入力欄に読み込みます。
         </p>
-        <div id="sampleList" class="sample-list">
-          <!-- サンプルリストはJSで動的生成 -->
-        </div>
+        <ul id="sampleList" class="sample-list"></ul>
       </div>
     </div>
   </div>
 
   <!-- ヘルプモーダル -->
-  <div id="helpModal" class="modal hidden">
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-content help-modal-content">
       <div class="modal-header">
-        <h3>❓ Cipher Clairvoyance ヘルプ</h3>
-        <button id="helpModalClose" class="modal-close">&times;</button>
+        <h3 id="helpTitle">❓ Cipher Clairvoyance ヘルプ</h3>
+        <button id="helpModalClose" class="modal-close" type="button" aria-label="閉じる">&times;</button>
       </div>
       <div class="modal-body help-modal-body">
-        <div class="help-content">
-          <!-- Help content will be loaded dynamically -->
-        </div>
+        <div class="help-content"></div>
       </div>
     </div>
   </div>
