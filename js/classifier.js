@@ -37,7 +37,7 @@ export function classifyVector(vector, n, model) {
   return { bucket, ranking, margin, close: margin < CLOSE_MARGIN };
 }
 
-// 1位を2位より支持した特徴量（内訳の差が大きい順。差が minDiff 未満の特徴量は、ほとんど効いていないので外す）
+// 1位を2位より支持した特徴量（内訳の差が大きい順。差が minDiff 未満の特徴量は、判定にほとんど関わらないので外す）
 export const DECISIVE_MIN_DIFF = 1;
 
 export function decisiveFeatures(result, count = 3, minDiff = DECISIVE_MIN_DIFF) {

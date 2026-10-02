@@ -14,7 +14,7 @@ test('CSP: インラインのスクリプト・スタイルを許さず、外部
   }
   assert.ok(!csp.includes('unsafe-inline'));
   assert.ok(!csp.includes('unsafe-eval'));
-  // frame-ancestors は meta では効かないので書かない
+  // frame-ancestors は meta では無視されるので書かない
   assert.ok(!csp.includes('frame-ancestors'));
   assert.match(html, /<meta name="referrer" content="no-referrer">/);
 });

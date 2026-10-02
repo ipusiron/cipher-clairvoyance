@@ -4,62 +4,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Cipher Clairvoyance** is a classical cipher identification and visualization web tool (Day044 of the "生成AIで作るセキュリティツール100" project). It's a client-side educational tool that analyzes ciphertext to identify which classical cipher method was likely used.
+**Cipher Clairvoyance** (Day044 of "生成AIで作るセキュリティツール100") identifies which classical cipher was used on English text. It is a static, client-side web tool with no build step and no runtime dependencies.
 
-## Development Commands
+- Classes: plaintext, Caesar, Affine, simple substitution, Vigenère, Playfair, transposition (statistical model) and ADFGX/ADFGVX (character-set rule).
+- The verdict comes from a Gaussian/Bernoulli naive Bayes model per length bucket (20–49, 50–99, 100–199, 200–399, 400+ letters) over 10 explainable features.
+- The UI shows the measured precision for the verdict in that length bucket (from `MODEL.evaluation`), never the model's posterior probability.
 
-Static web application with no build process. ES6 modules require a server:
+## Commands
 
 ```bash
-# Recommended: Use a local server (ES6 modules require this)
-python -m http.server 8000
-# or
-npx serve .
-
-# Then open http://localhost:8000 in browser
+npm test                              # node:test, Node 22+, no dependencies
+node tools/build-model.mjs            # regenerate js/model.js (deterministic, seed 20261002)
+node tools/build-model.mjs --check    # fail if js/model.js is out of date (run by the tests)
+node tools/build-samples.mjs          # regenerate js/samples.js
+node tools/build-samples.mjs --check
+python -m http.server 8000            # serve locally; file:// cannot load ES modules in Chrome/Edge
 ```
 
-## Architecture
-
-### ES6 Module Structure (`js/`)
+## Architecture (`js/`)
 
 | Module | Responsibility |
 |--------|---------------|
-| **app.js** | Entry point, event listeners, modal management |
-| **analyzer.js** | Main analysis pipeline, evidence aggregation, softmax normalization |
-| **analyzers.js** | Individual cipher detection algorithms (Caesar, Affine, Vigenère, Playfair, etc.) |
-| **ui.js** | DOM manipulation, result rendering, input validation |
-| **visualization.js** | SVG chart generation (frequency, autocorrelation, GCD histogram) |
-| **evidence.js** | Judgment reason generation, confidence calculation |
-| **utils.js** | Statistical functions (IC, χ², englishness), string utilities |
-| **config.js** | Constants (English letter frequencies, cipher descriptions) |
-| **samples.js** | 8 sample ciphertexts with masked key info |
-| **help-content.js** | Dynamic help modal HTML content |
+| cipher-core.js | Reference implementations of the ciphers (used for training data, samples and tests) |
+| features.js | The 10 features (IC, χ² per letter, best shift/affine χ², periodic IC gain, bigram score, doubled pairs, distinct letters, even length, J present) |
+| classifier.js | Naive Bayes scoring, close-call margin (3), decisive features (log-likelihood difference ≥ 1) |
+| keylength.js | Vigenère key length candidates (smallest period with mean column IC ≥ 0.058) and Kasiski counts |
+| analysis.js | Input inspection (errors vs notes) and the full analysis result; returns message keys, not text |
+| model.js | Generated model (do not edit by hand) |
+| samples.js | Generated samples (do not edit by hand) |
+| messages.js | All UI strings (Japanese). Logic modules must not contain Japanese string literals (tested) |
+| app.js / ui.js / visualization.js | Events, modals, rendering. User input is shown only via textContent |
+| theme-init.js / theme.js | Theme applied before CSS; light/dark toggle; works without Storage |
+| file-check.js | Shows a notice when opened via file:// and the app did not start |
 
-### Data Flow
+## Rules
 
-1. **Input** → `app.js` validates and passes to `analyzer.js`
-2. **Analysis** → `analyzer.js` orchestrates calls to `analyzers.js` functions
-3. **Evidence** → Each cipher detector returns evidence scores (0-1)
-4. **Normalization** → Softmax converts evidences to probabilities
-5. **Display** → `ui.js` renders results, `visualization.js` creates charts
-
-### Key Analysis Functions in `analyzers.js`
-
-- `bestCaesarShiftChi2()` - Brute force all 26 shifts, return best χ²
-- `bestAffineChi2()` - Try all valid (a,b) pairs for affine cipher
-- `vigenereEvidence()` - Autocorrelation + Kasiski method for key length
-- `playfairSuspicion()` - Even length, J-absence, X-padding detection
-- `adfgxDetector()` - Character set analysis for ADFGX/ADFGVX
-
-## Testing
-
-Manual testing via sample ciphertexts (dropdown in UI):
-1. Load sample → verify correct cipher identification
-2. Check visualizations render properly
-3. Test interactive features (autocorrelation bar clicks, n-gram highlighting)
+- Keep the model and samples generated: change `tools/` and regenerate, then run `npm test`.
+- Training text (`tools/corpus/train-pg1342.txt`) and evaluation text (`tools/corpus/eval-pg98.txt`) must stay separate.
+- CSP has no `'unsafe-inline'`: do not add inline scripts, `style` attributes or inline event handlers.
+- README tables (accuracy by length) are checked against `js/model.js` by `test/readme.test.js`.
 
 ## Deployment
 
-GitHub Pages: https://ipusiron.github.io/cipher-clairvoyance/
-Auto-deploys on push to main branch.
+GitHub Pages: https://ipusiron.github.io/cipher-clairvoyance/ (legacy build from `main`, `/`).
