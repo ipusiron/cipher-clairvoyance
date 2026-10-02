@@ -39,6 +39,8 @@ hub: true
 
 # Cipher Clairvoyance - 暗号化方式推定ツール
 
+[English](README.en.md) · 日本語
+
 ![GitHub Repo stars](https://img.shields.io/github/stars/ipusiron/cipher-clairvoyance?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/ipusiron/cipher-clairvoyance?style=social)
 ![GitHub last commit](https://img.shields.io/github/last-commit/ipusiron/cipher-clairvoyance)
@@ -57,15 +59,15 @@ Cipher Clairvoyanceは、英文を古典暗号で暗号化した文から、使�
 
 👉 **[https://ipusiron.github.io/cipher-clairvoyance/](https://ipusiron.github.io/cipher-clairvoyance/)**
 
-ブラウザーで直接お試しいただけます。
+ブラウザーで直接お試しいただけます。画面は日本語と英語を切り替えられます（`?lang=en`で英語の画面を開けます）。
 
 ---
 
 ## 📸 スクリーンショット
 
->![単一換字式暗号のサンプルを判定した結果](assets/screenshot.png)
+>![12字の鍵のヴィジュネル暗号のサンプルを判定した結果](assets/screenshot.png)
 >
->*単一換字式暗号のサンプルを判定した結果と、1位を2位より支持した特徴*
+>*ヴィジュネル暗号の判定と、2段目の見分け・試し解きの結果*
 
 >![周期ごとの一致指数とカシスキー法の集計](assets/screenshot2.png)
 >
@@ -74,6 +76,10 @@ Cipher Clairvoyanceは、英文を古典暗号で暗号化した文から、使�
 >![30字の短いシーザー暗号をダークモードで判定](assets/screenshot3.png)
 >
 >*30字の短い暗号文では、当たっていた割合が下がり、お知らせが出る（ダークモード）*
+
+>![判定が崩れる例（ヒル暗号）](assets/screenshot4.png)
+>
+>*対象外のヒル暗号はヴィジュネル暗号と出るが、お知らせと試し解きで気づける*
 
 ---
 
@@ -88,7 +94,7 @@ Cipher Clairvoyanceは、英文を古典暗号で暗号化した文から、使�
 - 詳細な分析: 文字の頻度（数値の表つき）、周期ごとの一致指数と鍵長の候補、カシスキー法の集計
 - サンプル17件: アメリカ独立宣言の冒頭を参照実装で暗号化したもの。対象外のヒル暗号と短いヴィジュネル暗号の「判定が崩れる例」も含む。鍵は「鍵を見る」で表示を切り替える
 - 関連ツールへの受け渡し: 判定結果に合わせてシリーズの解読・学習ツールを示し、受け取り口のあるツール（Day009・017・030・043）には暗号文を渡して開ける
-- ライト／ダークの切り替え、キーボード操作、読み上げ用の状態表示
+- 日本語／英語の切り替え、ライト／ダークの切り替え、キーボード操作、読み上げ用の状態表示
 
 ---
 
@@ -199,8 +205,8 @@ npm test
 
 - Node.js 22以上の標準のテストランナー（`node:test`）で動き、依存パッケージはありません
 - GitHub Actionsで、pushとpull requestのたびに自動で実行します
-- 主な内容: Wikipedia（英語版）の各暗号の例による既知解答、暗号化と復号の往復、試し解きが鍵と平文を当てること、2段目の見分け、モデルとサンプルの再生成の一致、長さ帯ごとの正答率の下限、入力の検査、受け渡しのURL、文言の辞書、配色のコントラスト、HTMLの静的検査（CSPなど）
-- このREADMEの正答率の表・サンプルの件数・ディレクトリー構造も、テストでモデルと実ファイルに突き合わせています
+- 主な内容: Wikipedia（英語版）の各暗号の例による既知解答、暗号化と復号の往復、試し解きが鍵と平文を当てること、2段目の見分け、モデルとサンプルの再生成の一致、長さ帯ごとの正答率の下限、入力の検査、受け渡しのURL、日英の辞書、配色のコントラスト、HTMLの静的検査（CSPなど）
+- このREADMEと英語版（README.en.md）の正答率の表・サンプルの件数・ディレクトリー構造・見出しの対応も、テストでモデルと実ファイルに突き合わせています
 
 ---
 
@@ -209,7 +215,7 @@ npm test
 - 入力した暗号文は、ブラウザーの中だけで処理し、外部へ送信しません。例外は、利用者が「渡して開く」を押したときだけです。このとき暗号文の英字をURLに入れて関連ツールを開くので、Day043以外（「?」より後ろに入れる形）では暗号文がGitHub Pagesのサーバーに届きます
 - Content Security PolicyでスクリプトとスタイルをGitHub Pagesの同じ場所のファイルだけに限り、インラインのスクリプト・スタイルを許していません
 - 入力された文字列は`textContent`でだけ表示します（HTMLとして解釈しません）
-- ブラウザーに保存するのは、ライト／ダークの選択だけです。保存できない環境でも動きます
+- ブラウザーに保存するのは、ライト／ダークと言語の選択だけです。保存できない環境でも動きます
 
 ---
 
@@ -248,11 +254,17 @@ cipher-clairvoyance/
 │   └── workflows/            # GitHub Actionsのワークフロー
 │       └── test.yml          # pushとpull requestでnpm testを実行
 ├── assets/                   # 画像
+│   ├── en/                   # 英語の画面のスクリーンショット
+│   │   ├── screenshot.png    # スクリーンショット（判定結果と試し解き）
+│   │   ├── screenshot2.png   # スクリーンショット（周期性分析）
+│   │   ├── screenshot3.png   # スクリーンショット（短い暗号文・ダーク）
+│   │   └── screenshot4.png   # スクリーンショット（判定が崩れる例・ヒル暗号）
 │   ├── favicon.ico           # ファビコン（ICO）
 │   ├── favicon.svg           # ファビコン（SVG）
-│   ├── screenshot.png        # スクリーンショット（判定結果）
+│   ├── screenshot.png        # スクリーンショット（判定結果と試し解き）
 │   ├── screenshot2.png       # スクリーンショット（周期性分析）
-│   └── screenshot3.png       # スクリーンショット（短い暗号文・ダーク）
+│   ├── screenshot3.png       # スクリーンショット（短い暗号文・ダーク）
+│   └── screenshot4.png       # スクリーンショット（判定が崩れる例・ヒル暗号）
 ├── js/                       # JavaScript（ES modules。file-check.jsとtheme-init.jsだけ通常スクリプト）
 │   ├── analysis.js           # 入力の検査から判定・根拠の組み立てまで（DOM非依存）
 │   ├── app.js                # イベントの登録、モーダル、解析の流れ
@@ -261,10 +273,11 @@ cipher-clairvoyance/
 │   ├── decide.js             # 判定の流れ（ヴィジュネル／オートキーの2段目の見分け）
 │   ├── features.js           # 特徴量（一致指数・χ²・周期ごとのICなど）の計算
 │   ├── file-check.js         # file://で起動できなかったときの案内
-│   ├── help-content.js       # ヘルプの本文
+│   ├── help-content.js       # ヘルプの本文（日本語・英語）
+│   ├── i18n.js               # 言語の決め方と、画面の静的な文言の差し替え
 │   ├── keylength.js          # ヴィジュネル暗号の鍵長の推定とカシスキー法の集計
 │   ├── links.js              # 関連ツールと、暗号文を渡して開くリンク
-│   ├── messages.js           # 画面に出す文言の辞書
+│   ├── messages.js           # 画面に出す文言の辞書（日本語・英語）
 │   ├── model.js              # 判定モデル（tools/build-model.mjsが生成）
 │   ├── samples.js            # サンプル暗号文（tools/build-samples.mjsが生成）
 │   ├── solver.js             # 試し解き（シーザー・アフィン・ヴィジュネル型・オートキー）
@@ -277,12 +290,13 @@ cipher-clairvoyance/
 │   ├── contrast.test.js      # 配色のコントラスト比（ライト・ダーク）
 │   ├── core.test.js          # 暗号の既知解答と往復
 │   ├── features.test.js      # 特徴量と鍵長の推定
-│   ├── format.test.js        # 行の長さと行数（詰め込みの検出）
+│   ├── format.test.js        # 行の長さ・行数・制御文字（詰め込みと置換の事故の検出）
 │   ├── html.test.js          # index.htmlの静的検査（CSP・属性・要素）
+│   ├── i18n.test.js          # 日英の辞書・ヘルプ・言語の決め方
 │   ├── links.test.js         # 関連ツールのリンクと受け渡しのURL
 │   ├── messages.test.js      # 文言の辞書
 │   ├── model.test.js         # モデルの再生成の一致・形・評価の下限
-│   ├── readme.test.js        # READMEの表・メタデータ・ディレクトリー構造
+│   ├── readme.test.js        # README（日英）の表・メタデータ・ディレクトリー構造・見出しの対応
 │   ├── samples.test.js       # サンプルの再生成の一致・往復・判定
 │   └── solver.test.js        # 試し解きと2段目の見分け
 ├── tools/                    # 開発用のスクリプト（画面では使わない）
@@ -297,6 +311,7 @@ cipher-clairvoyance/
 ├── ALGORITHM.md              # 判定の計算式・閾値・評価の手順
 ├── CLAUDE.md                 # Claude Code向けの開発メモ
 ├── LICENSE                   # ライセンス（MIT）
+├── README.en.md              # 英語版のREADME
 ├── README.md                 # このファイル
 ├── index.html                # 画面
 ├── package.json              # npm testの設定（依存パッケージなし）

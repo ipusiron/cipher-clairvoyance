@@ -40,7 +40,7 @@ test('判定・特徴量・サンプル・関連ツールの文言がそろっ�
 });
 
 test('コードの中で t() に直接書いたキーは、すべて辞書にある', () => {
-  const files = ['app.js', 'ui.js', 'visualization.js', 'analysis.js'];
+  const files = ['app.js', 'ui.js', 'visualization.js', 'analysis.js', 'theme.js', 'i18n.js'];
   let found = 0;
   for (const f of files) {
     for (const m of read(f).matchAll(/\bt\('([A-Za-z.]+)'/g)) { found++; assert.ok(ja[m[1]], `${f}: ${m[1]}`); }
@@ -51,7 +51,8 @@ test('コードの中で t() に直接書いたキーは、すべて辞書にあ
 
 test('ロジックと画面の JS には日本語の文字列を書かない（文言は messages.js に集める）', () => {
   const jp = /[　-ヿ㐀-鿿＀-￯]/;
-  for (const f of ['app.js', 'ui.js', 'visualization.js', 'analysis.js', 'classifier.js', 'features.js', 'keylength.js', 'cipher-core.js']) {
+  const logic = ['app.js', 'ui.js', 'visualization.js', 'analysis.js', 'classifier.js', 'features.js', 'keylength.js', 'cipher-core.js'];
+  for (const f of [...logic, 'decide.js', 'solver.js', 'links.js', 'i18n.js', 'theme.js']) {
     const code = read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
     const hit = code.split('\n').find((line) => jp.test(line));
     assert.equal(hit, undefined, `${f}: ${hit}`);

@@ -16,6 +16,14 @@ test('JS・CSS・テスト・道具の最長行は160文字以下、index.html �
   assert.equal(lines('index.html').findIndex((l) => l.length > 250), -1);
 });
 
+test('JS・CSS・HTMLに制御文字（タブ・改行以外）が入っていない（シェル経由の置換の事故の検出）', () => {
+  const targets = [...files('js/', '.js'), ...files('test/', '.js'), ...files('tools/', '.mjs'), 'style.css', 'index.html'];
+  for (const f of targets) {
+    const bad = fs.readFileSync(new URL(f, ROOT), 'utf8').split('').findIndex((c) => c.charCodeAt(0) < 32 && ![9, 10, 13].includes(c.charCodeAt(0)));
+    assert.equal(bad, -1, f);
+  }
+});
+
 test('主要ファイルの行数の下限（詰め込み・取り違えの検出）', () => {
   const min = { 'index.html': 150, 'style.css': 600, 'js/app.js': 120, 'js/ui.js': 200, 'js/cipher-core.js': 150, 'js/features.js': 80, 'js/model.js': 250 };
   for (const [f, n] of Object.entries(min)) assert.ok(lines(f).length >= n, `${f}: ${lines(f).length}`);

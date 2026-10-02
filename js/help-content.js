@@ -1,10 +1,11 @@
-// ヘルプモーダルの本文（静的なHTML）。行の折り返しが表示で空白にならないよう、改行と字下げは取り除いて使う。
+// ヘルプモーダルの本文（静的なHTML、日本語と英語）。行の折り返しが表示で余計な空白にならないよう、
+// 日本語は改行と字下げを取り除き、英語は空白1つに置き換えて使う。
 // 特徴量の説明（#helpFeatures）と長さ別の正答率の表（#helpAccuracy）は、開くときにapp.jsが
 // messages.jsとmodel.jsから組み立てる（本文と数字が食い違わないように）
 
 const LINK = (path, label) => `<a href="https://ipusiron.github.io/${path}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 
-export const HELP_CONTENT = `
+const JA = `
   <section class="help-section">
     <h4>🔮 このツールについて</h4>
     <p>Cipher Clairvoyance（サイファー・クレアボヤンス）は、英文を古典暗号で暗号化した文から、使われた方式を推定する教育用ツールです。
@@ -104,3 +105,123 @@ export const HELP_CONTENT = `
     <a href="https://akademeia.info/?page_id=42163" target="_blank" rel="noopener noreferrer">プロジェクトの紹介</a></p>
   </section>
 `.replace(/\n\s*/g, '');
+
+const EN = `
+  <section class="help-section">
+    <h4>🔮 About this tool</h4>
+    <p>Cipher Clairvoyance is an educational tool that estimates which classical cipher was used to encrypt English text.
+    It shows every statistic behind the verdict in a table, together with the measured rate at which this verdict was actually correct
+    for ciphertexts of the same length. For the Caesar, affine, Vigenère and autokey ciphers it also guesses the key and turns the text
+    back into plaintext (a "trial decryption").</p>
+  </section>
+
+  <section class="help-section">
+    <h4>🚀 How to use</h4>
+    <ol>
+      <li>Paste the ciphertext into the input box (characters other than A-Z and spaces are ignored).
+        If it consists only of pairs of the digits 1-5, it is read as a Polybius square cipher</li>
+      <li>Press "🔍 Analyze" (or Ctrl+Enter)</li>
+      <li>Check the first-place method and how often that verdict was actually correct. Read any notes (close call, short text, possibly unsupported,
+        and so on)</li>
+      <li>If a trial decryption appears, check whether the result reads as English</li>
+      <li>Use the table under "Why this verdict" to compare which statistics are close to the typical values of which method</li>
+      <li>Continue with the decoding and learning tools under "🔧 Tools to try next". "Open it with this ciphertext" opens the tool with the text filled in</li>
+    </ol>
+    <p>"📄 Load a sample" offers ciphertexts for each method and two "failing cases".</p>
+  </section>
+
+  <section class="help-section">
+    <h4>🔐 Supported methods</h4>
+    <ul>
+      <li><strong>Plain English</strong>: English that is not encrypted</li>
+      <li><strong>Caesar cipher</strong>: every letter shifted by the same amount (with trial decryption)</li>
+      <li><strong>Affine cipher</strong>: letters replaced by (a×x + b) mod 26. The Atbash cipher is the case a = 25, b = 25 (with trial decryption)</li>
+      <li><strong>Simple substitution cipher</strong>: each letter replaced by a fixed table</li>
+      <li><strong>Vigenère cipher</strong>: the shift changes with the letters of a keyword. Key length candidates are shown,
+        and the trial decryption also recognizes the Beaufort type (the alphabet runs backwards in each column)</li>
+      <li><strong>Autokey cipher</strong>: after the first few letters (the primer), the plaintext itself is the key. It has no period (with trial
+        decryption)</li>
+      <li><strong>Playfair cipher</strong>: letters replaced two at a time with a 5×5 table</li>
+      <li><strong>Bifid cipher</strong>: the row and column numbers of a 5×5 table are split and joined again</li>
+      <li><strong>Transposition cipher</strong>: the letters are kept and only their order changes (rail fence, columnar, turning grille and so on are
+        not told apart)</li>
+      <li><strong>ADFGX/ADFGVX cipher</strong>: decided without statistics when the ciphertext uses only A, D, F, G, (V) and X</li>
+      <li><strong>Polybius square cipher</strong>: input made only of pairs of the digits 1-5 is turned back into letters with the standard table and
+        then analyzed
+        ("plain English" for the standard table, "simple substitution" for a shuffled one)</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>📏 Reading the result</h4>
+    <ul>
+      <li><strong>Actually correct</strong>: an evaluation text not used for training (Dickens, A Tale of Two Cities) was encrypted with each method
+        the same number of times. This is the measured share of verdicts naming this method, for this length range, that really were this method.
+        It assumes every method is equally common, and it does not cover unsupported methods</li>
+      <li><strong>Trial decryption</strong>: the key is chosen only by how English-like the result is (how common its adjacent letter pairs are).
+        If it turns back into English, both the verdict and the key are very likely right</li>
+      <li><strong>Second stage</strong>: the Vigenère and autokey ciphers have very similar statistics. With 50 or more letters, both are trial-decrypted
+        and the one that turns back into English is ranked first</li>
+      <li><strong>Close call</strong>: shown when the fit of first and second place is close, with the measured accuracy for such cases</li>
+      <li><strong>Other candidates</strong>: ranked by fit. No probabilities are shown, because this model's probabilities are overconfident</li>
+      <li><strong>Possibly unsupported</strong>: shown when a text of 200 or more letters does not turn back into English in the trial decryption,
+        or when a Vigenère verdict has no visible period</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>🧮 How it works</h4>
+    <p>The tool computes the 10 statistics (features) below and, for each length range (20-49, 50-99, 100-199, 200-399 and 400+ letters),
+    compares them with the typical distributions of nine methods (naive Bayes classification). The distributions come from encrypting
+    an excerpt of Jane Austen's Pride and Prejudice with each method. Training and evaluation run in a script with a fixed random seed,
+    so rebuilding always gives the same result.</p>
+    <dl id="helpFeatures" class="help-features"></dl>
+  </section>
+
+  <section class="help-section">
+    <h4>📊 Accuracy by length (measured)</h4>
+    <p>The share of ciphertexts of each method, judged in equal numbers for each length range, whose correct method came first (recall).
+    These values come from the same procedure as the screen, including the second stage.</p>
+    <div class="table-scroll"><table id="helpAccuracy" class="wide-table"></table></div>
+  </section>
+
+  <section class="help-section">
+    <h4>💡 Notes</h4>
+    <ul>
+      <li>The tool assumes encrypted English. Text in other languages has different statistics, so the verdict will be wrong</li>
+      <li>Methods not in the list above (such as the Hill cipher) are still assigned to one of the methods, usually Vigenère or autokey,
+        and their trial decryption does not turn back into English</li>
+      <li>The shorter the text, the more often the verdict is wrong. With 20-49 letters the Vigenère, autokey and Bifid ciphers can hardly be told
+        apart (see the table above)</li>
+      <li>"Open it with this ciphertext" puts the ciphertext into the URL. Except for Day043, the ciphertext reaches the GitHub Pages server,
+        so do not pass text you want to keep private</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>🔗 Related tools (100 Security Tools with Generative AI)</h4>
+    <ul>
+      <li>${LINK('caesar-cipher-breaker/', 'Caesar Cipher Breaker (Day008)')}: solve a Caesar cipher by brute force</li>
+      <li>${LINK('frequency-analyzer/', 'Frequency Analyzer (Day009)')}: look at letter frequencies in detail</li>
+      <li>${LINK('vigenere-cipher-tool/', 'Vigenère Cipher Tool (Day017)')}: encrypt and decrypt the Vigenère cipher</li>
+      <li>${LINK('cipherclimb/', 'Cipher Climb (Day018)')}: solve simple substitution by hill climbing</li>
+      <li>${LINK('grille-cipherlab/', 'Grille CipherLab (Day024)')}: the turning grille</li>
+      <li>${LINK('playfair-cipherlab/', 'Playfair CipherLab (Day027)')}: the Playfair cipher</li>
+      <li>${LINK('repeatseq-analyzer/', 'RepeatSeq Analyzer (Day028)')}: find the key length from repeats</li>
+      <li>${LINK('modular-text-divider/', 'Modular Text Divider (Day030)')}: split the text into columns by period</li>
+      <li>${LINK('railfence-cipherlab/', 'RailFence CipherLab (Day034)')}: the rail fence cipher</li>
+      <li>${LINK('columnar-cipherlab/', 'Columnar CipherLab (Day043)')}: columnar transposition</li>
+      <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer (Day047)')}: learn the index of coincidence</li>
+      <li>${LINK('affine-cipherlab/', 'Affine CipherLab (Day049)')}: the affine cipher</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>📄 About the project</h4>
+    <p>This tool was built as Day044 of the "100 Security Tools with Generative AI" project.
+    <a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank" rel="noopener noreferrer">GitHub repository</a> /
+    <a href="https://akademeia.info/?page_id=42163" target="_blank" rel="noopener noreferrer">About the project (Japanese)</a></p>
+  </section>
+`.replace(/\n\s*/g, ' ').trim();
+
+export const HELP_CONTENT = { ja: JA, en: EN };

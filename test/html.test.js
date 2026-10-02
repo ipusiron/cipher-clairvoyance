@@ -42,7 +42,7 @@ test('読み込み順: テーマの初期化はスタイルより前、本体は
 });
 
 test('画面の要素の id がそろっている', () => {
-  const ids = ['btnTheme', 'btnHelp', 'btnSampleSelect', 'cipherText', 'inputCount', 'inputError', 'inputNotes', 'btnAnalyze', 'btnClear',
+  const ids = ['btnLang', 'btnTheme', 'btnHelp', 'btnSampleSelect', 'cipherText', 'inputCount', 'inputError', 'inputNotes', 'btnAnalyze', 'btnClear',
     'mainResult', 'staleNote', 'srStatus', 'winnerName', 'winnerDesc', 'measuredLabel', 'confidenceLevel', 'confidenceText', 'measuredNote',
     'resultNotes', 'otherPossibilities', 'evidenceContent', 'toolLinks', 'toggleDetails', 'detailsSection', 'basicStats', 'freqChart',
     'freqTable', 'freqTableSummary', 'periodChart', 'keyLengthInfo', 'kasiskiChart', 'kasiskiInfo', 'sampleModal', 'modalClose', 'sampleList',
@@ -67,6 +67,6 @@ test('ボタンには type、モーダルには dialog の役割と見出し、�
 test('ユーザーの入力は innerHTML に入れない（innerHTML は静的なヘルプ本文だけ）', () => {
   for (const f of ['app.js', 'ui.js', 'visualization.js', 'theme.js']) {
     const uses = [...js(f).matchAll(/\.innerHTML\s*=\s*([^;]+);/g)].map((m) => m[1].trim());
-    for (const u of uses) assert.equal(u, 'HELP_CONTENT', `${f}: ${u}`);
+    for (const u of uses) assert.equal(u, 'HELP_CONTENT[getLanguage()]', `${f}: ${u}`);
   }
 });

@@ -36,7 +36,8 @@ python -m http.server 8000            # serve locally; file:// cannot load ES mo
 | analysis.js | Input inspection (errors vs notes) and the full analysis result; returns message keys, not text |
 | model.js | Generated model (do not edit by hand) |
 | samples.js | Generated samples (do not edit by hand) |
-| messages.js | All UI strings (Japanese). Logic modules must not contain Japanese string literals (tested) |
+| messages.js | All UI strings in Japanese and English (same keys and placeholders, tested). Logic modules must not contain Japanese string literals (tested) |
+| i18n.js | Language choice (?lang=ja|en, then the saved choice, then navigator.language) and data-i18n / data-i18n-attr replacement in index.html |
 | app.js / ui.js / visualization.js | Events, modals, rendering. User input is shown only via textContent |
 | theme-init.js / theme.js | Theme applied before CSS; light/dark toggle; works without Storage |
 | file-check.js | Shows a notice when opened via file:// and the app did not start |
@@ -46,7 +47,7 @@ python -m http.server 8000            # serve locally; file:// cannot load ES mo
 - Keep the model and samples generated: change `tools/` and regenerate, then run `npm test`.
 - Training text (`tools/corpus/train-pg1342.txt`) and evaluation text (`tools/corpus/eval-pg98.txt`) must stay separate.
 - CSP has no `'unsafe-inline'`: do not add inline scripts, `style` attributes or inline event handlers.
-- README tables (accuracy by length) are checked against `js/model.js` by `test/readme.test.js`.
+- README.md and README.en.md keep the same headings; their accuracy tables are checked against `js/model.js` by `test/readme.test.js`.
 
 ## Deployment
 
