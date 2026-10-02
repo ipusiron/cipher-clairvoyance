@@ -4,12 +4,15 @@ import { analyze, inspectInput } from './analysis.js';
 import { renderResult, showInputMessages, updateInputCount, setStale, setDetailsOpen, clearResult, renderHelpExtras } from './ui.js';
 import { CIPHER_SAMPLES } from './samples.js';
 import { HELP_CONTENT } from './help-content.js';
-import { t } from './messages.js';
-import { initThemeToggle } from './theme.js';
+import { t, getLanguage } from './messages.js';
+import { initThemeToggle, refreshThemeButton } from './theme.js';
+import { initialLanguage, useLanguage, saveLanguage } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 let analyzedText = null;
 let lastOpener = null;
+let lastResult = null;
+let lastInput = { errors: [], notes: [] };
 
 // ボタンの有効・無効（空なら解析もクリアもできない）
 function updateButtonStates() {
@@ -23,23 +26,53 @@ function onInput() {
   updateButtonStates();
   updateInputCount(text);
   // 入力中は「解析できない理由」だけを消し、お知らせは解析のときに出す
+  lastInput = { errors: [], notes: [] };
   showInputMessages([], []);
   if (analyzedText !== null) setStale(text !== analyzedText);
+}
+
+function announce(result) {
+  $('srStatus').textContent = result.method === 'model'
+    ? t('status.result', { name: t(`cipher.${result.winner}`), percent: Math.round((result.measured.correct / result.measured.predicted) * 100) })
+    : t('status.rule', { name: t(`cipher.${result.variant}`) });
 }
 
 // 解析（ボタンと Ctrl＋Enter は同じ関数を通る）
 function performAnalysis() {
   const text = $('cipherText').value;
   const input = inspectInput(text);
+  lastInput = { errors: input.errors, notes: input.notes };
   showInputMessages(input.errors, input.notes);
   if (input.errors.length) return;
   const result = analyze(text);
   renderResult(result);
   analyzedText = text;
+  lastResult = result;
   // 読み上げ用に、結果の要点を1文で知らせる
-  $('srStatus').textContent = result.method === 'model'
-    ? t('status.result', { name: t(`cipher.${result.winner}`), percent: Math.round((result.measured.correct / result.measured.predicted) * 100) })
-    : t('status.rule', { name: t(`cipher.${result.variant}`) });
+  announce(result);
+}
+
+function renderHelp() {
+  const help = $('helpModal').querySelector('.help-content');
+  help.innerHTML = HELP_CONTENT[getLanguage()];
+  renderHelpExtras(help);
+}
+
+// 言語を切り替えたら、静的な文言・サンプル一覧・入力欄の下・結果・ヘルプを今の言語で描き直す
+function applyLanguage(lang) {
+  useLanguage(lang);
+  initializeSampleList();
+  updateInputCount($('cipherText').value);
+  showInputMessages(lastInput.errors, lastInput.notes);
+  refreshThemeButton($('btnTheme'));
+  const detailsOpen = $('toggleDetails').getAttribute('aria-expanded') === 'true';
+  if (lastResult) {
+    renderResult(lastResult);
+    announce(lastResult);
+    setStale($('cipherText').value !== analyzedText);
+  }
+  setDetailsOpen(detailsOpen);
+  if (!$('helpModal').classList.contains('hidden')) renderHelp();
 }
 
 // モーダル: 開いたら中へフォーカスを移し、Tab を中に閉じ込め、閉じたら開いたボタンへ戻す
@@ -98,7 +131,7 @@ function initializeSampleList() {
     name.textContent = t(`sample.name.${sample.id}`);
     const desc = document.createElement('span');
     desc.className = 'sample-desc';
-    desc.textContent = t(`sample.desc.${sample.id}`);
+    desc.textContent = t(`sample.desc.${sample.id}`, { expect: sample.expect ? t(`cipher.${sample.expect}`) : '' });
     load.append(name, desc);
     load.addEventListener('click', () => {
       $('cipherText').value = sample.ciphertext;
@@ -142,6 +175,7 @@ function init() {
   $('btnClear').addEventListener('click', () => {
     textarea.value = '';
     analyzedText = null;
+    lastResult = null;
     clearResult();
     onInput();
     textarea.focus();
@@ -150,13 +184,16 @@ function init() {
     setDetailsOpen($('toggleDetails').getAttribute('aria-expanded') !== 'true');
   });
 
-  initializeSampleList();
+  applyLanguage(initialLanguage());
+  $('btnLang').addEventListener('click', () => {
+    const next = getLanguage() === 'ja' ? 'en' : 'ja';
+    saveLanguage(next);
+    applyLanguage(next);
+  });
   $('btnSampleSelect').addEventListener('click', (e) => openModal($('sampleModal'), e.currentTarget));
   $('modalClose').addEventListener('click', () => closeModal($('sampleModal')));
   $('btnHelp').addEventListener('click', (e) => {
-    const help = $('helpModal').querySelector('.help-content');
-    help.innerHTML = HELP_CONTENT;
-    renderHelpExtras(help);
+    renderHelp();
     openModal($('helpModal'), e.currentTarget);
   });
   $('helpModalClose').addEventListener('click', () => closeModal($('helpModal')));

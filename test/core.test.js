@@ -139,3 +139,38 @@ test('modInverse: 26 と互いに素な a だけ逆元がある', () => {
     else assert.equal(inv, null);
   }
 });
+
+test('既知解答: オートキー暗号（プライマー QUEENLY）', () => {
+  assert.equal(C.autokeyEncrypt(L('attackatdawn'), 'QUEENLY'), 'QNXEPVYTWTWP');
+  assert.equal(C.autokeyDecrypt('QNXEPVYTWTWP', 'QUEENLY'), 'ATTACKATDAWN');
+});
+
+test('既知解答: バイフィッド暗号（Wikipedia の表、文全体を1ブロック）', () => {
+  assert.equal(C.bifidEncrypt('FLEEATONCE', 'BGWKZQPNDSIOAXEFCLUMTHYVR'), 'UAEOLWRINS');
+  assert.ok(!C.bifidEncrypt('JUMPINGJACK', C.playfairSquare('KEY')).includes('J'));
+});
+
+test('既知解答: ヒル暗号（2×2、鍵 [[3,3],[2,5]]）とポリュビオス暗号（BAT＝12 11 44）', () => {
+  assert.equal(C.hill2Encrypt('HELP', [[3, 3], [2, 5]]), 'HIAT');
+  assert.throws(() => C.hill2Encrypt('HELP', [[2, 4], [1, 2]]), RangeError);
+  assert.equal(C.polybiusEncode('BAT'), '12 11 44');
+  assert.equal(C.polybiusDecode('12 11 44'), 'BAT');
+  assert.equal(C.polybiusDecode('121'), 'B');
+});
+
+test('往復: オートキー（プライマー1〜12字）・ボーフォート型（同じ操作で戻る）・ポリュビオス', () => {
+  for (let n = 0; n <= TEXT.length; n++) {
+    const t = TEXT.slice(0, n);
+    for (const p of ['A', 'KEY', 'QUEENLY', 'ABCDEFGHIJKL']) assert.equal(C.autokeyDecrypt(C.autokeyEncrypt(t, p), p), t);
+    for (const k of ['A', 'FORT', 'JEFFERSON']) assert.equal(C.beaufortEncrypt(C.beaufortEncrypt(t, k), k), t);
+    assert.equal(C.polybiusDecode(C.polybiusEncode(t)), t.replace(/J/g, 'I'));
+  }
+});
+
+test('バイフィッドのブロック: 周期で区切ると、区切りごとに独立して変わる', () => {
+  const sq = C.playfairSquare('SECRET');
+  const whole = C.bifidEncrypt('ABCDEFGHIK', sq, 5);
+  assert.equal(whole.slice(0, 5), C.bifidEncrypt('ABCDE', sq));
+  assert.equal(whole.slice(5), C.bifidEncrypt('FGHIK', sq));
+  assert.throws(() => C.bifidEncrypt('ABC', sq, 0), RangeError);
+});

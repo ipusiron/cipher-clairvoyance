@@ -5,12 +5,43 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MODEL } from '../js/model.js';
 import { CIPHER_SAMPLES } from '../js/samples.js';
-import { TOOL_LINKS } from '../js/ui.js';
-import { t } from '../js/messages.js';
+import { allToolUrls } from '../js/links.js';
+import { MESSAGES } from '../js/messages.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
-const algorithm = fs.readFileSync(path.join(ROOT, 'ALGORITHM.md'), 'utf8').replace(/\r\n/g, '\n');
+const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n/g, '\n');
+const DOCS = {
+  ja: {
+    file: 'README.md',
+    text: read('README.md'),
+    accuracy: '📊 長さ別の正答率（実測）',
+    related: '🔗 関連ツール',
+    tree: '📁 ディレクトリー構造',
+    about: '🛠️ このツールについて',
+    day: '**Day044 - 生成AIで作るセキュリティツール100**',
+    switcher: '[English](README.en.md) · 日本語',
+    keyTop1: '1位が正解',
+    keyTop3: '上位3つに正解',
+    perClass: (n) => `${n}件ずつ`,
+    samples: (n) => [`サンプル${n}件`, `${n}種類の練習用の暗号文`],
+    images: /^assets\/screenshot\d*\.png$/
+  },
+  en: {
+    file: 'README.en.md',
+    text: read('README.en.md'),
+    accuracy: '📊 Accuracy by length (measured)',
+    related: '🔗 Related tools',
+    tree: '📁 Directory structure',
+    about: '🛠️ About this tool',
+    day: '**Day044 - 100 Security Tools with Generative AI**',
+    switcher: 'English · [日本語](README.md)',
+    keyTop1: 'First candidate correct',
+    keyTop3: 'Correct within the top 3',
+    perClass: (n) => `${n} times`,
+    samples: (n) => [`${n} samples`, `${n} practice ciphertexts`],
+    images: /^assets\/en\/screenshot\d*\.png$/
+  }
+};
 const pct = (a, b) => `${Math.round((a / b) * 100)}%`;
 
 // 見出し（## ）の後ろから、次の ## までを取り出す
@@ -27,8 +58,10 @@ function tableRows(text, firstCell) {
   return text.split('\n').filter((l) => l.startsWith('| ')).map((l) => l.slice(2, -2).split(' | ')).filter((r) => r[0] === firstCell || !firstCell);
 }
 
-test('YAML メタデータの構造（キーの順、ブロック形式のリスト、固定の値）', () => {
-  const m = readme.match(/^<!--\n---\n([\s\S]*?)\n---\n-->\n/);
+const headings = (md) => md.replace(/```[\s\S]*?```/g, '').split('\n').filter((l) => /^#{1,4} /.test(l));
+
+test('YAML メタデータの構造（キーの順、ブロック形式のリスト、固定の値）。YAML は README.md だけに置く', () => {
+  const m = DOCS.ja.text.match(/^<!--\n---\n([\s\S]*?)\n---\n-->\n/);
   assert.ok(m, 'YAML block');
   const yaml = m[1];
   const keys = [...yaml.matchAll(/^([a-z_]+):/gm)].map((x) => x[1]);
@@ -40,39 +73,93 @@ test('YAML メタデータの構造（キーの順、ブロック形式のリス
   assert.match(yaml, /^repo_url: "https:\/\/github.com\/ipusiron\/cipher-clairvoyance"$/m);
   assert.match(yaml, /^demo_url: "https:\/\/ipusiron.github.io\/cipher-clairvoyance\/"$/m);
   assert.match(yaml, /^hub: true$/m);
+  assert.doesNotMatch(DOCS.en.text, /^<!--/);
 });
 
-test('シリーズ標準の構成（Day表記・見出しの順・定型文のリンク）', () => {
-  assert.match(readme, /^# Cipher Clairvoyance - /m);
-  assert.match(readme, /\*\*Day044 - 生成AIで作るセキュリティツール100\*\*/);
-  const heads = [...readme.matchAll(/^## (.+)$/gm)].map((x) => x[1]);
-  assert.equal(heads[0], '🌐 デモページ');
-  assert.equal(heads[1], '📸 スクリーンショット');
-  assert.deepEqual(heads.slice(-4), ['📁 ディレクトリー構造', '💻 動作環境', '📄 ライセンス', '🛠️ このツールについて']);
-  for (const h of ['🎯 ユースケース', '🧪 テスト']) assert.ok(heads.includes(h), h);
-  assert.match(section(readme, '🛠️ このツールについて'), /https:\/\/akademeia\.info\/\?page_id=42163/);
+test('日英の README は同じ見出しを同じ順に持つ（階層と絵文字がそろう）', () => {
+  const ja = headings(DOCS.ja.text);
+  const en = headings(DOCS.en.text);
+  assert.equal(en.length, ja.length);
+  ja.forEach((h, i) => {
+    assert.equal(en[i].split(' ')[0], h.split(' ')[0], `${h} / ${en[i]}`);
+    if (h.startsWith('## ')) assert.equal([...en[i].slice(3)][0], [...h.slice(3)][0], `${h} / ${en[i]}`);
+  });
 });
 
-test('長さ別の正答率の表は、モデルの評価と一致する', () => {
-  const sec = section(readme, '📊 長さ別の正答率（実測）');
-  for (const c of MODEL.classes) {
-    const rows = tableRows(sec, t(`cipher.${c}`));
-    assert.equal(rows.length, 1, c);
-    const expected = MODEL.buckets.map((b) => pct(MODEL.evaluation[b.id].confusion[c][c], MODEL.evaluation[b.id].perClass));
-    assert.deepEqual(rows[0].slice(1), expected, c);
+for (const [lang, d] of Object.entries(DOCS)) {
+  test(`${d.file}: シリーズ標準の構成（Day表記・切り替えリンク・見出しの順・定型文のリンク）`, () => {
+    assert.match(d.text, /^# Cipher Clairvoyance - /m);
+    assert.ok(d.text.includes(d.day));
+    assert.ok(d.text.includes(d.switcher));
+    const heads = [...d.text.matchAll(/^## (.+)$/gm)].map((x) => x[1]);
+    assert.ok(heads[0].startsWith('🌐'));
+    assert.ok(heads[1].startsWith('📸'));
+    assert.deepEqual(heads.slice(-4).map((h) => [...h][0]), ['📁', '💻', '📄', '🛠']);
+    for (const icon of ['🎯', '🧪']) assert.ok(heads.some((h) => h.startsWith(icon)), icon);
+    assert.match(section(d.text, d.about), /https:\/\/akademeia\.info\/\?page_id=42163/);
+  });
+
+  test(`${d.file}: 長さ別の正答率と鍵長の表は、モデルの評価と一致する`, () => {
+    const sec = section(d.text, d.accuracy);
+    for (const c of MODEL.classes) {
+      const rows = tableRows(sec, MESSAGES[lang][`cipher.${c}`]);
+      assert.equal(rows.length, 1, c);
+      assert.deepEqual(rows[0].slice(1), MODEL.buckets.map((b) => pct(MODEL.evaluation[b.id].confusion[c][c], MODEL.evaluation[b.id].perClass)), c);
+    }
+    const key = (label, field) => {
+      const rows = tableRows(sec, label);
+      assert.equal(rows.length, 1, label);
+      assert.deepEqual(rows[0].slice(1), MODEL.buckets.map((b) => pct(MODEL.evaluation[b.id].keyLength[field], MODEL.evaluation[b.id].keyLength.count)));
+    };
+    key(d.keyTop1, 'top1');
+    key(d.keyTop3, 'top3');
+    assert.ok(sec.includes(d.perClass(MODEL.evaluation.n20.perClass)));
+  });
+
+  test(`${d.file}: サンプルの件数と関連ツールの一覧が実装と一致する`, () => {
+    for (const s of d.samples(CIPHER_SAMPLES.length)) assert.ok(d.text.includes(s), s);
+    for (const u of allToolUrls()) assert.ok(section(d.text, d.related).includes(`(${u})`), u);
+  });
+
+  test(`${d.file}: ディレクトリー構造にすべてのファイルとディレクトリーが載り、全行に説明がある`, () => {
+    const block = section(d.text, d.tree).match(/```\n([\s\S]*?)```/)[1];
+    const lines = block.split('\n').filter(Boolean).slice(1);
+    const listed = new Set();
+    for (const line of lines) {
+      const m = line.match(/^[│├└─\s]*([^\s#]+)\s+# (.+)$/);
+      assert.ok(m, `説明のない行: ${line}`);
+      listed.add(m[1].replace(/\/$/, ''));
+    }
+    const walk = (dir) => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })
+      .filter((x) => !['.git', 'node_modules', '.claude'].includes(x.name))
+      .flatMap((x) => (x.isDirectory() ? [x.name, ...walk(path.join(dir, x.name))] : [x.name]));
+    for (const name of walk('.')) assert.ok(listed.has(name), `ツリーにない: ${name}`);
+    const cols = new Set(lines.map((l) => l.indexOf(' # ')));
+    assert.equal(cols.size, 1, [...cols].join(','));
+  });
+}
+
+test('画像: 参照はすべて実在し、日本語版は assets/、英語版は assets/en/ の画像を使う。参照していない PNG は置かない', () => {
+  const refs = {};
+  for (const [lang, d] of Object.entries(DOCS)) {
+    refs[lang] = [...d.text.matchAll(/!\[[^\]]*\]\((assets\/[^)]+)\)/g)].map((m) => m[1]);
+    assert.ok(refs[lang].length >= 4, lang);
+    for (const r of refs[lang]) {
+      assert.ok(fs.existsSync(path.join(ROOT, r)), r);
+      assert.match(r, d.images, r);
+    }
   }
-  const key = (label, field) => {
-    const rows = tableRows(sec, label);
-    assert.equal(rows.length, 1, label);
-    assert.deepEqual(rows[0].slice(1), MODEL.buckets.map((b) => pct(MODEL.evaluation[b.id].keyLength[field], MODEL.evaluation[b.id].keyLength.count)));
-  };
-  key('1位が正解', 'top1');
-  key('上位3つに正解', 'top3');
-  assert.ok(sec.includes(`${MODEL.evaluation.n20.perClass}件ずつ`));
+  const pngs = (dir) => fs.readdirSync(path.join(ROOT, dir)).filter((f) => f.endsWith('.png')).map((f) => `${dir}/${f}`).sort();
+  assert.deepEqual(pngs('assets'), [...new Set(refs.ja)].sort());
+  assert.deepEqual(pngs('assets/en'), [...new Set(refs.en)].sort());
 });
 
 test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデルの平均と一致する', () => {
-  const names = { plain: '英語の平文', caesar: 'シーザー', affine: 'アフィン', substitution: '単一換字', vigenere: 'ヴィジュネル', playfair: 'プレイフェア', transposition: '転置' };
+  const algorithm = read('ALGORITHM.md');
+  const names = {
+    plain: '英語の平文', caesar: 'シーザー', affine: 'アフィン', substitution: '単一換字', vigenere: 'ヴィジュネル',
+    autokey: 'オートキー', playfair: 'プレイフェア', bifid: 'バイフィッド', transposition: '転置'
+  };
   const start = algorithm.indexOf('| 方式 | ic |');
   assert.ok(start >= 0);
   const typical = algorithm.slice(start, algorithm.indexOf('\n---', start));
@@ -82,37 +169,4 @@ test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデル�
     const got = rows[0].slice(1).map((v) => Number(v.replace('−', '-')));
     assert.deepEqual(got, MODEL.params.n400[c].mean.map((v) => Number(v.toPrecision(3))), c);
   }
-});
-
-test('サンプルの件数と関連ツールの一覧が実装と一致する', () => {
-  assert.ok(readme.includes(`サンプル${CIPHER_SAMPLES.length}件`));
-  assert.ok(readme.includes(`${CIPHER_SAMPLES.length}種類の練習用の暗号文`));
-  const urls = new Set(Object.values(TOOL_LINKS).flat().map(([, p]) => `https://ipusiron.github.io/${p}`));
-  for (const u of urls) assert.ok(section(readme, '🔗 関連ツール').includes(`(${u})`), u);
-});
-
-test('画像の参照はすべて実在し、assets の PNG は README から参照しているものだけ', () => {
-  const refs = [...readme.matchAll(/!\[[^\]]*\]\((assets\/[^)]+)\)/g)].map((m) => m[1]);
-  assert.ok(refs.length >= 3);
-  for (const r of refs) assert.ok(fs.existsSync(path.join(ROOT, r)), r);
-  const pngs = fs.readdirSync(path.join(ROOT, 'assets')).filter((f) => f.endsWith('.png')).map((f) => `assets/${f}`);
-  assert.deepEqual(pngs.sort(), [...new Set(refs)].sort());
-});
-
-test('ディレクトリー構造: すべてのファイルとディレクトリーが載り、全行に説明がある', () => {
-  const block = section(readme, '📁 ディレクトリー構造').match(/```\n([\s\S]*?)```/)[1];
-  const lines = block.split('\n').filter(Boolean).slice(1);
-  const listed = new Set();
-  for (const line of lines) {
-    const m = line.match(/^[│├└─\s]*([^\s#]+)\s+# (.+)$/);
-    assert.ok(m, `説明のない行: ${line}`);
-    listed.add(m[1].replace(/\/$/, ''));
-  }
-  const walk = (dir) => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })
-    .filter((d) => !['.git', 'node_modules', '.claude'].includes(d.name))
-    .flatMap((d) => (d.isDirectory() ? [d.name, ...walk(path.join(dir, d.name))] : [d.name]));
-  for (const name of walk('.')) assert.ok(listed.has(name), `ツリーにない: ${name}`);
-  // # の桁がそろっている
-  const cols = new Set(lines.map((l) => l.indexOf(' # ')));
-  assert.equal(cols.size, 1, [...cols].join(','));
 });

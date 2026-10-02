@@ -7,6 +7,7 @@ import { drawFrequencyChart, drawPeriodChart, drawKasiskiChart } from './visuali
 import { KEY_IC_THRESHOLD } from './keylength.js';
 import { FEATURES } from './features.js';
 import { MODEL } from './model.js';
+import { buildToolLinks } from './links.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,16 +20,6 @@ function el(tag, className, text) {
 
 const percent = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
-// 判定結果から案内する関連ツール（いずれも「生成AIで作るセキュリティツール100」）
-const BASE = 'https://ipusiron.github.io/';
-export const TOOL_LINKS = {
-  caesar: [['links.caesar', 'caesar-cipher-breaker/'], ['links.frequency', 'frequency-analyzer/']],
-  affine: [['links.affine', 'affine-cipherlab/'], ['links.frequency', 'frequency-analyzer/']],
-  substitution: [['links.cipherclimb', 'cipherclimb/'], ['links.frequency', 'frequency-analyzer/']],
-  vigenere: [['links.vigenere', 'vigenere-cipher-tool/'], ['links.repeatseq', 'repeatseq-analyzer/'], ['links.ic', 'ic-learning-visualizer/']],
-  playfair: [['links.playfair', 'playfair-cipherlab/']],
-  transposition: [['links.railfence', 'railfence-cipherlab/'], ['links.columnar', 'columnar-cipherlab/'], ['links.grille', 'grille-cipherlab/']]
-};
 
 export function rangeText(bucket) {
   return bucket.max === null ? t('range.open', { min: bucket.min }) : t('range.closed', { min: bucket.min, max: bucket.max });
@@ -36,12 +27,47 @@ export function rangeText(bucket) {
 
 function cipherName(r, type) {
   if (type === 'adfgvx' && r.variant === 'adfgx') return t('cipher.adfgx');
+  if (r.polybius) return t('result.polybiusName', { name: t('cipher.polybius'), inner: t(`cipher.${type}`) });
   return t(`cipher.${type}`);
+}
+
+const TRIAL_SHOWN = 200;
+
+function trialKeyText(trial) {
+  switch (trial.type) {
+    case 'caesar': return t('trial.caesar', { shift: trial.shift });
+    case 'affine': return trial.a === 25 && trial.b === 25 ? t('trial.atbash') : t('trial.affine', { a: trial.a, b: trial.b });
+    case 'vigenere':
+      return trial.variant === 'beaufort' ? t('trial.beaufort', { length: trial.keyLength })
+        : t('trial.vigenere', { length: trial.keyLength, key: trial.key });
+    case 'autokey': return t('trial.autokey', { primer: trial.primer, length: trial.primerLength });
+    default: return '';
+  }
+}
+
+// 試し解き（鍵の候補と、戻した文の先頭）
+function renderTrial(r) {
+  const box = $('trialSection');
+  box.replaceChildren();
+  const trial = r.trial;
+  box.classList.toggle('hidden', !trial && !r.polybius);
+  if (r.polybius) {
+    box.append(el('h3', '', t('polybius.banner')));
+    box.append(el('p', 'trial-plain', r.polybius.decoded.slice(0, TRIAL_SHOWN)));
+  }
+  if (!trial) return;
+  box.append(el('h3', '', t('trial.title')));
+  box.append(el('p', 'trial-key', trialKeyText(trial)));
+  box.append(el('p', `trial-badge ${trial.englishLike ? 'is-good' : 'is-bad'}`, t(trial.englishLike ? 'trial.good' : 'trial.bad')));
+  box.append(el('p', 'trial-plain', trial.plaintext.slice(0, TRIAL_SHOWN)));
+  if (trial.plaintext.length > TRIAL_SHOWN) box.append(el('p', 'muted', t('trial.more', { shown: TRIAL_SHOWN, total: trial.plaintext.length })));
+  box.append(el('p', 'muted', t('trial.note')));
 }
 
 function noteText(note) {
   const params = { ...note.params };
   if (note.key === 'note.close') params.second = t(`cipher.${params.second}`);
+  if (note.key === 'note.stage2') params.other = t(`cipher.${params.other}`);
   if (note.key === 'note.ignored') params.sample = params.sample.map((c) => t('note.ignoredChar', { c }));
   return t(note.key, params);
 }
@@ -165,24 +191,37 @@ function renderEvidence(r) {
   box.append(wrap);
 }
 
+function newTabLink(className, text, href) {
+  const a = el('a', className, text);
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  return a;
+}
+
+// 関連ツール。受け取り口のあるツールには「暗号文を渡して開く」を添える
 function renderLinks(r) {
   const box = $('toolLinks');
-  const links = TOOL_LINKS[r.winner] || [];
+  const period = r.keyLength.candidates[0] ?? null;
+  const links = r.polybius ? [] : buildToolLinks(r.winner, r.letters, period);
   box.replaceChildren();
   box.classList.toggle('hidden', links.length === 0);
   if (!links.length) return;
   box.append(el('div', 'tool-header', t('links.title')));
   const list = el('ul', 'tool-list');
-  for (const [key, path] of links) {
-    const a = el('a', 'tool-link', t(key));
-    a.href = BASE + path;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    const li = el('li');
-    li.append(a);
+  let passes = false;
+  for (const link of links) {
+    const li = el('li', 'tool-item');
+    li.append(newTabLink('tool-link', t(link.key), link.href));
+    if (link.pass) {
+      passes = true;
+      if (link.pass.tooLong) li.append(el('span', 'muted', t('links.tooLong', { max: link.pass.max.toLocaleString('en-US') })));
+      else li.append(newTabLink('tool-pass', t(link.pass.key, { n: link.pass.period }), link.pass.href));
+    }
     list.append(li);
   }
   box.append(list);
+  if (passes) box.append(el('p', 'muted pass-note', t('links.passNote')));
 }
 
 export function renderDetails(r) {
@@ -243,12 +282,14 @@ export function renderDetails(r) {
 export function renderResult(r) {
   $('mainResult').classList.remove('hidden');
   $('winnerName').textContent = cipherName(r, r.winner);
-  $('winnerDesc').textContent = t(r.winner === 'adfgvx' && r.variant === 'adfgx' ? 'desc.adfgx' : `desc.${r.winner}`);
+  $('winnerDesc').textContent = r.polybius ? t('desc.polybius')
+    : t(r.winner === 'adfgvx' && r.variant === 'adfgx' ? 'desc.adfgx' : `desc.${r.winner}`);
   renderMeasured(r);
   const notes = $('resultNotes');
   notes.replaceChildren(...r.notes.filter((n) => n.key !== 'note.ignored' && n.key !== 'note.fewLetters').map((n) => el('li', '', noteText(n))));
   notes.classList.toggle('hidden', notes.children.length === 0);
   renderOthers(r);
+  renderTrial(r);
   renderEvidence(r);
   renderLinks(r);
   renderDetails(r);

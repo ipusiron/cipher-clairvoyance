@@ -10,7 +10,7 @@ export function currentTheme() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function updateButton(button) {
+export function refreshThemeButton(button) {
   const dark = currentTheme() === 'dark';
   button.textContent = dark ? '☀️' : '🌙';
   const label = t(dark ? 'theme.toLight' : 'theme.toDark');
@@ -19,7 +19,7 @@ function updateButton(button) {
 }
 
 export function initThemeToggle(button) {
-  updateButton(button);
+  refreshThemeButton(button);
   button.addEventListener('click', () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
@@ -28,9 +28,9 @@ export function initThemeToggle(button) {
     } catch (e) {
       // 保存できなくても、このページを開いているあいだは切り替わる
     }
-    updateButton(button);
+    refreshThemeButton(button);
   });
   if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => updateButton(button));
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => refreshThemeButton(button));
   }
 }
