@@ -1,370 +1,178 @@
-// メインアプリケーション
+// メインアプリケーション（イベントの登録と、モーダル・解析の流れ）
 
-import { analyzeText } from './analyzer.js';
-import { updateUI, toggleSection, clearForm, updateButtonStates, validateInput } from './ui.js';
+import { analyze, inspectInput } from './analysis.js';
+import { renderResult, showInputMessages, updateInputCount, setStale, setDetailsOpen, clearResult, renderHelpExtras } from './ui.js';
 import { CIPHER_SAMPLES } from './samples.js';
 import { HELP_CONTENT } from './help-content.js';
+import { t } from './messages.js';
+import { initThemeToggle } from './theme.js';
 
-// 初期化処理
-function init() {
-  setupEventListeners();
+const $ = (id) => document.getElementById(id);
+let analyzedText = null;
+let lastOpener = null;
+
+// ボタンの有効・無効（空なら解析もクリアもできない）
+function updateButtonStates() {
+  const hasText = $('cipherText').value.trim().length > 0;
+  $('btnAnalyze').disabled = !hasText;
+  $('btnClear').disabled = !hasText;
 }
 
-// イベントリスナーの設定
-function setupEventListeners() {
-  // テキストエリアの入力監視
-  const cipherText = document.getElementById('cipherText');
-  if (cipherText) {
-    cipherText.addEventListener('input', () => {
-      updateButtonStates();
-      validateInput(); // リアルタイム検証
-    });
-    
-    // フォーカスアウト時にも検証
-    cipherText.addEventListener('blur', validateInput);
-    
-    // 初期状態を設定
-    updateButtonStates();
-  }
-
-  // サンプル選択ボタン
-  const btnSampleSelect = document.getElementById('btnSampleSelect');
-  if (btnSampleSelect) {
-    btnSampleSelect.addEventListener('click', openSampleModal);
-  }
-
-  // ヘルプボタン
-  const btnHelp = document.getElementById('btnHelp');
-  if (btnHelp) {
-    btnHelp.addEventListener('click', openHelpModal);
-  }
-
-  // サンプルモーダル関連
-  const modalClose = document.getElementById('modalClose');
-  const sampleModal = document.getElementById('sampleModal');
-  
-  if (modalClose) {
-    modalClose.addEventListener('click', closeSampleModal);
-  }
-  
-  if (sampleModal) {
-    sampleModal.addEventListener('click', (e) => {
-      if (e.target === sampleModal) closeSampleModal();
-    });
-  }
-
-  // ヘルプモーダル関連
-  const helpModalClose = document.getElementById('helpModalClose');
-  const helpModal = document.getElementById('helpModal');
-  
-  if (helpModalClose) {
-    helpModalClose.addEventListener('click', closeHelpModal);
-  }
-  
-  if (helpModal) {
-    helpModal.addEventListener('click', (e) => {
-      if (e.target === helpModal) closeHelpModal();
-    });
-  }
-
-  // サンプルリストを初期化
-  initializeSampleList();
-
-  // キーボードショートカット（Escapeキーでモーダルを閉じる）
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const sampleModal = document.getElementById('sampleModal');
-      const helpModal = document.getElementById('helpModal');
-      
-      if (sampleModal && !sampleModal.classList.contains('hidden')) {
-        closeSampleModal();
-      } else if (helpModal && !helpModal.classList.contains('hidden')) {
-        closeHelpModal();
-      }
-    }
-  });
-
-  // 解析実行
-  const btnAnalyze = document.getElementById('btnAnalyze');
-  if (btnAnalyze) {
-    btnAnalyze.addEventListener('click', performAnalysis);
-  }
-
-  // クリア
-  const btnClear = document.getElementById('btnClear');
-  if (btnClear) {
-    btnClear.addEventListener('click', () => {
-      clearForm();
-      updateButtonStates();
-    });
-  }
-
-  // 詳細表示トグル
-  const toggleDetails = document.getElementById('toggleDetails');
-  if (toggleDetails) {
-    toggleDetails.addEventListener('click', () => {
-      toggleSection('detailsSection', 'toggleDetails', 
-        '📊 詳細な分析を見る', '📊 詳細を隠す');
-    });
-  }
-
-  // 専門家向け表示トグル
-  const toggleAdvanced = document.getElementById('toggleAdvanced');
-  if (toggleAdvanced) {
-    toggleAdvanced.addEventListener('click', () => {
-      toggleSection('advancedSection', 'toggleAdvanced', 
-        '🔬 専門家向け分析を見る', '🔬 専門家向けを隠す');
-    });
-  }
+function onInput() {
+  const text = $('cipherText').value;
+  updateButtonStates();
+  updateInputCount(text);
+  // 入力中は「解析できない理由」だけを消し、お知らせは解析のときに出す
+  showInputMessages([], []);
+  if (analyzedText !== null) setStale(text !== analyzedText);
 }
 
-// サンプルリストを初期化
-function initializeSampleList() {
-  const sampleList = document.getElementById('sampleList');
-  if (!sampleList) return;
-
-  sampleList.innerHTML = '';
-  
-  CIPHER_SAMPLES.forEach(sample => {
-    const item = document.createElement('div');
-    item.className = 'sample-item';
-    
-    // 鍵情報を生成（各暗号タイプに応じて）
-    let keyInfo = '';
-    
-    if (sample.id === 'vigenere') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.25rem;">
-            <span>キーワード: 
-              <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                ${'*'.repeat(sample.key.length)}
-              </span>
-            </span>
-            <span>鍵長: 
-              <span class="keylength-mask" data-length="${sample.keyLength}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                **
-              </span>
-            </span>
-          </div>
-        </div>
-      `;
-    } else if (sample.id === 'vigenere2') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.25rem;">
-            <span>キーワード: 
-              <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                ${'*'.repeat(sample.key.length)}
-              </span>
-            </span>
-            <span>鍵長: 
-              <span class="keylength-mask" data-length="${sample.keyLength}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                *
-              </span>
-            </span>
-          </div>
-        </div>
-      `;
-    } else if (sample.id === 'caesar') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <span>シフト量: 
-            <span class="key-mask" data-key="${sample.shift}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-              *
-            </span>
-          </span>
-        </div>
-      `;
-    } else if (sample.id === 'affine') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <div style="display: flex; gap: 1rem; align-items: center;">
-            <span>a値: 
-              <span class="key-mask" data-key="${sample.a}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                *
-              </span>
-            </span>
-            <span>b値: 
-              <span class="key-mask" data-key="${sample.b}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-                *
-              </span>
-            </span>
-          </div>
-        </div>
-      `;
-    } else if (sample.id === 'playfair') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <span>キーワード: 
-            <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-              ${'*'.repeat(sample.key.length)}
-            </span>
-          </span>
-        </div>
-      `;
-    } else if (sample.id === 'railfence') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <span>レール数: 
-            <span class="key-mask" data-key="${sample.rails}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-              *
-            </span>
-          </span>
-        </div>
-      `;
-    } else if (sample.id === 'columnar') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <span>キーワード: 
-            <span class="key-mask" data-key="${sample.key}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-              ${'*'.repeat(sample.key.length)}
-            </span>
-          </span>
-        </div>
-      `;
-    } else if (sample.id === 'grille') {
-      keyInfo = `
-        <div class="key-info" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-          <span>グリッドサイズ: 
-            <span class="key-mask" data-key="${sample.gridSize}" style="cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;" title="クリックで表示">
-              **
-            </span>
-          </span>
-        </div>
-      `;
-    }
-    
-    item.innerHTML = `
-      <h4>${sample.name}</h4>
-      <p>${sample.description}</p>
-      ${keyInfo}
-    `;
-    
-    item.addEventListener('click', (e) => {
-      // マスクされた要素がクリックされた場合の処理
-      if (e.target.classList.contains('key-mask') || e.target.classList.contains('keylength-mask')) {
-        e.stopPropagation();
-        const value = e.target.dataset.key || e.target.dataset.length;
-        toggleMask(e.target, value);
-        return;
-      }
-      
-      // サンプル読み込み
-      loadSample(sample.ciphertext);
-      closeSampleModal();
-    });
-    
-    sampleList.appendChild(item);
-  });
-}
-
-// サンプルモーダルを開く
-function openSampleModal() {
-  const modal = document.getElementById('sampleModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  }
-}
-
-// サンプルモーダルを閉じる
-function closeSampleModal() {
-  const modal = document.getElementById('sampleModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
-}
-
-// ヘルプモーダルを開く
-function openHelpModal() {
-  const modal = document.getElementById('helpModal');
-  if (modal) {
-    // ヘルプコンテンツを動的に読み込み
-    const helpContent = modal.querySelector('.help-content');
-    if (helpContent) {
-      helpContent.innerHTML = HELP_CONTENT;
-    }
-    
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  }
-}
-
-// ヘルプモーダルを閉じる
-function closeHelpModal() {
-  const modal = document.getElementById('helpModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
-}
-
-// サンプルを読み込む
-function loadSample(ciphertext) {
-  document.getElementById('cipherText').value = ciphertext;
-  updateButtonStates(); // ボタン状態を更新
-}
-
-// 解析を実行
+// 解析（ボタンと Ctrl＋Enter は同じ関数を通る）
 function performAnalysis() {
-  const text = document.getElementById('cipherText').value;
-  if (!text.trim()) {
-    alert('暗号文を入力してください');
-    return;
-  }
-
-  // 入力検証
-  if (!validateInput()) {
-    // エラーがある場合は解析を実行しない
-    return;
-  }
-
-  // オプションを取得
-  const opts = {
-    stripNonLetters: getCheckboxValue('chkStripNonLetters'),
-    preserveSpaces: getCheckboxValue('chkPreserveSpaces'),
-    basic: getCheckboxValue('chkBasic'),
-    caesarAffine: getCheckboxValue('chkCaesarAffine'),
-    vigAutoKasiski: getCheckboxValue('chkVigAutoKasiski'),
-    vigColumns: getCheckboxValue('chkVigColumns'),
-    playfair: getCheckboxValue('chkPlayfair'),
-    transposition: getCheckboxValue('chkTransposition'),
-    adfgx: getCheckboxValue('chkADFGX')
-  };
-
-  // 解析実行
-  const analysis = analyzeText(text, opts);
-  
-  // UI更新
-  updateUI(analysis);
+  const text = $('cipherText').value;
+  const input = inspectInput(text);
+  showInputMessages(input.errors, input.notes);
+  if (input.errors.length) return;
+  const result = analyze(text);
+  renderResult(result);
+  analyzedText = text;
+  // 読み上げ用に、結果の要点を1文で知らせる
+  $('srStatus').textContent = result.method === 'model'
+    ? t('status.result', { name: t(`cipher.${result.winner}`), percent: Math.round((result.measured.correct / result.measured.predicted) * 100) })
+    : t('status.rule', { name: t(`cipher.${result.variant}`) });
 }
 
-// チェックボックスの値を取得
-function getCheckboxValue(id) {
-  const checkbox = document.getElementById(id);
-  return checkbox ? checkbox.checked : true;
+// モーダル: 開いたら中へフォーカスを移し、Tab を中に閉じ込め、閉じたら開いたボタンへ戻す
+function focusables(modal) {
+  return [...modal.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])')].filter((n) => !n.disabled && n.offsetParent !== null);
 }
 
-// マスク表示を切り替える
-function toggleMask(element, value) {
-  const isHidden = element.textContent.includes('*');
-  
-  if (isHidden) {
-    element.textContent = value;
-    element.style.background = '#dcfce7';
-    element.style.color = '#166534';
-  } else {
-    if (element.classList.contains('key-mask')) {
-      element.textContent = '*'.repeat(value.length);
-    } else {
-      element.textContent = '**';
+function openModal(modal, opener) {
+  lastOpener = opener;
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  const first = focusables(modal)[0];
+  if (first) first.focus();
+}
+
+function closeModal(modal) {
+  modal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  if (lastOpener) lastOpener.focus();
+  lastOpener = null;
+}
+
+function openModalElement() {
+  return ['sampleModal', 'helpModal'].map($).find((m) => !m.classList.contains('hidden')) || null;
+}
+
+function trapTab(e) {
+  const modal = openModalElement();
+  if (!modal || e.key !== 'Tab') return;
+  const list = focusables(modal);
+  if (!list.length) return;
+  const first = list[0];
+  const last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+function paramText(sample) {
+  const entries = Object.entries(sample.params);
+  if (!entries.length) return t('sample.param.none');
+  return entries.map(([k, v]) => t(`sample.param.${k}`, { value: v })).join(t('sample.param.sep'));
+}
+
+// サンプルの一覧（名前のボタンで読み込み、鍵は「鍵を見る」で表示を切り替える）
+function initializeSampleList() {
+  const list = $('sampleList');
+  list.replaceChildren();
+  for (const sample of CIPHER_SAMPLES) {
+    const li = document.createElement('li');
+    li.className = 'sample-item';
+    const load = document.createElement('button');
+    load.type = 'button';
+    load.className = 'sample-load';
+    const name = document.createElement('span');
+    name.className = 'sample-name';
+    name.textContent = t(`sample.name.${sample.id}`);
+    const desc = document.createElement('span');
+    desc.className = 'sample-desc';
+    desc.textContent = t(`sample.desc.${sample.id}`);
+    load.append(name, desc);
+    load.addEventListener('click', () => {
+      $('cipherText').value = sample.ciphertext;
+      closeModal($('sampleModal'));
+      $('cipherText').focus();
+      onInput();
+    });
+    const keyRow = document.createElement('div');
+    keyRow.className = 'sample-key-row';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'btn small sample-key-toggle';
+    toggle.textContent = t('sample.showKey');
+    toggle.setAttribute('aria-pressed', 'false');
+    const value = document.createElement('span');
+    value.className = 'sample-key-value';
+    value.textContent = paramText(sample);
+    value.hidden = true;
+    toggle.addEventListener('click', () => {
+      const show = value.hidden;
+      value.hidden = !show;
+      toggle.setAttribute('aria-pressed', String(show));
+      toggle.textContent = show ? t('sample.hideKey') : t('sample.showKey');
+    });
+    keyRow.append(toggle, value);
+    li.append(load, keyRow);
+    list.append(li);
+  }
+}
+
+function init() {
+  const textarea = $('cipherText');
+  textarea.addEventListener('input', onInput);
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !$('btnAnalyze').disabled) {
+      e.preventDefault();
+      performAnalysis();
     }
-    element.style.background = '#f1f5f9';
-    element.style.color = 'var(--text-muted)';
+  });
+  $('btnAnalyze').addEventListener('click', performAnalysis);
+  $('btnClear').addEventListener('click', () => {
+    textarea.value = '';
+    analyzedText = null;
+    clearResult();
+    onInput();
+    textarea.focus();
+  });
+  $('toggleDetails').addEventListener('click', () => {
+    setDetailsOpen($('toggleDetails').getAttribute('aria-expanded') !== 'true');
+  });
+
+  initializeSampleList();
+  $('btnSampleSelect').addEventListener('click', (e) => openModal($('sampleModal'), e.currentTarget));
+  $('modalClose').addEventListener('click', () => closeModal($('sampleModal')));
+  $('btnHelp').addEventListener('click', (e) => {
+    const help = $('helpModal').querySelector('.help-content');
+    help.innerHTML = HELP_CONTENT;
+    renderHelpExtras(help);
+    openModal($('helpModal'), e.currentTarget);
+  });
+  $('helpModalClose').addEventListener('click', () => closeModal($('helpModal')));
+  for (const id of ['sampleModal', 'helpModal']) {
+    $(id).addEventListener('click', (e) => { if (e.target === $(id)) closeModal($(id)); });
   }
+  document.addEventListener('keydown', (e) => {
+    const modal = openModalElement();
+    if (modal && e.key === 'Escape') { e.preventDefault(); closeModal(modal); }
+    trapTab(e);
+  });
+
+  initThemeToggle($('btnTheme'));
+  updateButtonStates();
+  updateInputCount(textarea.value);
+  document.documentElement.setAttribute('data-ready', 'true');
 }
 
-// DOMContentLoadedイベントで初期化
 document.addEventListener('DOMContentLoaded', init);

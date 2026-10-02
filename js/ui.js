@@ -1,371 +1,307 @@
-// UI制御とDOM操作
+// 画面の描画（DOM操作）。文言は messages.js の t() で組み立て、入力由来の文字列は textContent でだけ表示する
 
-import { CIPHER_DESCRIPTIONS } from './config.js';
-import { 
-  drawFrequencyChart, 
-  drawAutocorrelation, 
-  drawGCDHistogram,
-  updateConfidenceBar 
-} from './visualization.js';
-import { generateEvidence } from './evidence.js';
-import { validateCipherInput } from './utils.js';
+import { t } from './messages.js';
+import { MIN_LETTERS } from './analysis.js';
+import { lettersOnly } from './cipher-core.js';
+import { drawFrequencyChart, drawPeriodChart, drawKasiskiChart } from './visualization.js';
+import { KEY_IC_THRESHOLD } from './keylength.js';
+import { FEATURES } from './features.js';
+import { MODEL } from './model.js';
 
-// 暗号名の日本語表記マッピング
-const CIPHER_NAMES_JP = {
-  caesar: 'シーザー暗号',
-  affine: 'アフィン暗号', 
-  vigenere: 'ヴィジュネル暗号',
-  playfair: 'プレイフェア暗号',
-  transposition: '転置式暗号',
-  adfgx: 'ADFGX暗号',
-  substitution: '換字式暗号',
-  unknown: '不明'
+const $ = (id) => document.getElementById(id);
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+const percent = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+// 判定結果から案内する関連ツール（いずれも「生成AIで作るセキュリティツール100」）
+const BASE = 'https://ipusiron.github.io/';
+export const TOOL_LINKS = {
+  caesar: [['links.caesar', 'caesar-cipher-breaker/'], ['links.frequency', 'frequency-analyzer/']],
+  affine: [['links.affine', 'affine-cipherlab/'], ['links.frequency', 'frequency-analyzer/']],
+  substitution: [['links.cipherclimb', 'cipherclimb/'], ['links.frequency', 'frequency-analyzer/']],
+  vigenere: [['links.vigenere', 'vigenere-cipher-tool/'], ['links.repeatseq', 'repeatseq-analyzer/'], ['links.ic', 'ic-learning-visualizer/']],
+  playfair: [['links.playfair', 'playfair-cipherlab/']],
+  transposition: [['links.railfence', 'railfence-cipherlab/'], ['links.columnar', 'columnar-cipherlab/'], ['links.grille', 'grille-cipherlab/']]
 };
 
-// 暗号解読ツールのリンクを更新
-function updateCipherToolLinks(cipherType) {
-  let toolLinksContainer = document.getElementById('toolLinks');
-  
-  // コンテナが存在しない場合は作成
-  if (!toolLinksContainer) {
-    toolLinksContainer = document.createElement('div');
-    toolLinksContainer.id = 'toolLinks';
-    toolLinksContainer.style.cssText = 'margin-top: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;';
-    
-    const toggleDetails = document.getElementById('toggleDetails');
-    if (toggleDetails) {
-      toggleDetails.insertAdjacentElement('beforebegin', toolLinksContainer);
-    } else {
-      // フォールバック: evidenceSectionの後
-      const evidenceSection = document.getElementById('evidenceSection');
-      if (evidenceSection) {
-        evidenceSection.insertAdjacentElement('afterend', toolLinksContainer);
-      } else {
-        // 最終フォールバック
-        const mainResult = document.getElementById('mainResult');
-        if (mainResult) {
-          mainResult.appendChild(toolLinksContainer);
-        }
-      }
-    }
+export function rangeText(bucket) {
+  return bucket.max === null ? t('range.open', { min: bucket.min }) : t('range.closed', { min: bucket.min, max: bucket.max });
+}
+
+function cipherName(r, type) {
+  if (type === 'adfgvx' && r.variant === 'adfgx') return t('cipher.adfgx');
+  return t(`cipher.${type}`);
+}
+
+function noteText(note) {
+  const params = { ...note.params };
+  if (note.key === 'note.close') params.second = t(`cipher.${params.second}`);
+  if (note.key === 'note.ignored') params.sample = params.sample.map((c) => t('note.ignoredChar', { c }));
+  return t(note.key, params);
+}
+
+// 入力欄の下の文字数
+export function updateInputCount(text) {
+  $('inputCount').textContent = t('input.count', { letters: lettersOnly(text).length, min: MIN_LETTERS });
+}
+
+// 解析できない理由（errors）と、続けたうえでのお知らせ（notes）
+export function showInputMessages(errors, notes) {
+  const box = $('inputError');
+  const msg = box.querySelector('.error-message');
+  const textarea = $('cipherText');
+  if (errors.length) {
+    msg.textContent = errors.map((e) => t(e.key, e.params)).join(' ');
+    box.classList.remove('hidden');
+    textarea.setAttribute('aria-invalid', 'true');
   } else {
+    msg.textContent = '';
+    box.classList.add('hidden');
+    textarea.removeAttribute('aria-invalid');
   }
-  
-  // リンクをクリア
-  toolLinksContainer.innerHTML = '';
-  
-  if (cipherType === 'caesar') {
-    toolLinksContainer.innerHTML = `
-      <div class="tool-header">
-        🔧 解読ツール
-      </div>
-      <div class="tool-description">
-        シーザー暗号の自動解読には、総当り攻撃と頻出語検索が効果的です：
-      </div>
-      <a href="https://ipusiron.github.io/caesar-cipher-breaker/" 
-         target="_blank" 
-         rel="noopener noreferrer"
-         class="tool-link">
-        <span>🔓</span>
-        <span>Caesar Cipher Breaker で解読</span>
-        <span class="tool-link-icon">↗</span>
-      </a>
-    `;
-  } else if (cipherType === 'vigenere') {
-    toolLinksContainer.innerHTML = `
-      <div class="tool-header">
-        🔧 解析ツール
-      </div>
-      <div class="tool-description">
-        ヴィジュネル暗号の鍵長推定には、反復文字列の検出が重要です：
-      </div>
-      <a href="https://ipusiron.github.io/repeatseq-analyzer/" 
-         target="_blank" 
-         rel="noopener noreferrer"
-         class="tool-link">
-        <span>🔍</span>
-        <span>RepeatSeq Analyzer で鍵長推定</span>
-        <span class="tool-link-icon">↗</span>
-      </a>
-    `;
-  } else {
-    // 表示するツールがない場合は枠を隠す
-    toolLinksContainer.style.display = 'none';
+  const list = $('inputNotes');
+  list.replaceChildren(...notes.filter((n) => n.key === 'note.ignored' || n.key === 'note.fewLetters').map((n) => el('li', '', noteText(n))));
+  list.classList.toggle('hidden', list.children.length === 0);
+}
+
+export function setStale(stale) {
+  const note = $('staleNote');
+  note.textContent = stale ? t('note.stale') : '';
+  note.classList.toggle('hidden', !stale);
+  $('mainResult').classList.toggle('is-stale', stale);
+}
+
+function renderMeasured(r) {
+  const fill = $('confidenceLevel');
+  if (r.method === 'rule') {
+    const size = r.variant === 'adfgx' ? 5 : 6;
+    $('measuredLabel').textContent = t('result.rule', { symbols: t(`symbols.${r.variant}`), size });
+    $('confidenceText').textContent = '';
+    $('measuredNote').textContent = '';
+    fill.parentElement.classList.add('hidden');
     return;
   }
-  
-  // 表示するツールがある場合は枠を表示
-  toolLinksContainer.style.display = 'block';
+  fill.parentElement.classList.remove('hidden');
+  const p = percent(r.measured.correct, r.measured.predicted);
+  $('measuredLabel').textContent = t('result.measured', { range: rangeText(r.bucket) });
+  $('confidenceText').textContent = t('result.measuredValue', { percent: p, correct: r.measured.correct, predicted: r.measured.predicted });
+  $('measuredNote').textContent = t('result.measuredNote');
+  fill.style.width = `${p}%`;
+  fill.classList.toggle('level-high', p >= 90);
+  fill.classList.toggle('level-mid', p >= 70 && p < 90);
+  fill.classList.toggle('level-low', p < 70);
 }
 
-// メイン結果の更新
-export function updateMainResult(winner) {
-  const mainResult = document.getElementById('mainResult');
-  mainResult.classList.remove('hidden');
-  
-  const winnerName = CIPHER_NAMES_JP[winner.type] || winner.type;
-  document.getElementById('winnerName').textContent = winnerName;
-  document.getElementById('winnerDesc').textContent = winner.description;
-  
-  updateConfidenceBar(winner.probability);
+function renderOthers(r) {
+  const box = $('otherPossibilities');
+  box.replaceChildren();
+  if (r.method !== 'model') return;
+  box.append(el('h4', '', t('result.others')));
+  const list = el('ol', 'possibility-list');
+  r.ranking.slice(1, 4).forEach((type, i) => list.append(el('li', 'possibility-chip', t('result.rank', { rank: i + 2, name: t(`cipher.${type}`) }))));
+  box.append(list);
 }
 
-// その他の可能性を表示
-export function updateOtherPossibilities(probabilities, winner) {
-  const container = document.getElementById('otherPossibilities');
-  container.innerHTML = '<h4 style="width:100%;margin-bottom:0.5rem;color:var(--text-muted)">その他の可能性:</h4>';
-  
-  const sortedProbs = Object.entries(probabilities)
-    .filter(([type]) => type !== winner.type)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
-  
-  sortedProbs.forEach(([type, prob]) => {
-    const percentage = Math.round(prob * 100);
-    if (percentage > 5) {
-      const chip = document.createElement('div');
-      chip.className = 'possibility-chip';
-      chip.innerHTML = `
-        <span>${CIPHER_NAMES_JP[type] || type}</span>
-        <span class="percentage" style="font-weight: 600; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; color: #3b82f6;">${percentage}%</span>
-      `;
-      container.appendChild(chip);
+function formatValue(f, v) {
+  if (f.kind === 'bernoulli') return v ? t('evidence.yes') : t('evidence.no');
+  return f.digits === 0 ? String(Math.round(v)) : v.toFixed(f.digits);
+}
+
+function formatTypical(f, v) {
+  if (f.kind === 'bernoulli') return t('evidence.rate', { percent: Math.round(v * 100) });
+  return f.digits === 0 ? v.toFixed(1) : v.toFixed(f.digits);
+}
+
+function renderEvidence(r) {
+  const box = $('evidenceContent');
+  box.replaceChildren();
+  if (r.method === 'rule') {
+    box.append(el('p', 'evidence-description', t('evidence.ruleBody')));
+    return;
+  }
+  const first = t(`cipher.${r.winner}`);
+  const second = t(`cipher.${r.second}`);
+  if (r.decisive.length) {
+    const group = el('div', 'evidence-group');
+    group.append(el('h4', '', t('evidence.decisive', { first, second })));
+    const list = el('ul', 'decisive-list');
+    for (const id of r.decisive) {
+      const li = el('li', '');
+      li.append(el('strong', '', t(`feature.${id}`)), el('span', '', t('evidence.decisiveHelp', { help: t(`featureHelp.${id}`) })));
+      list.append(li);
     }
-  });
+    group.append(list);
+    box.append(group);
+  }
+  const wrap = el('div', 'table-scroll');
+  const table = el('table', 'evidence-table wide-table');
+  table.append(el('caption', '', t('evidence.tableCaption')));
+  const head = el('tr');
+  for (const h of [t('evidence.colFeature'), t('evidence.colValue'), t('evidence.colPlain'), first, second]) {
+    const th = el('th', '', h);
+    th.scope = 'col';
+    head.append(th);
+  }
+  const thead = el('thead');
+  thead.append(head);
+  const tbody = el('tbody');
+  for (const f of r.features) {
+    const tr = el('tr', r.decisive.includes(f.id) ? 'is-decisive' : '');
+    const th = el('th', '', t(`feature.${f.id}`));
+    th.scope = 'row';
+    th.title = t(`featureHelp.${f.id}`);
+    tr.append(th, el('td', 'num', formatValue(f, f.value)), el('td', 'num', formatTypical(f, f.plain)),
+      el('td', 'num', formatTypical(f, f.winner)), el('td', 'num', formatTypical(f, f.second)));
+    tbody.append(tr);
+  }
+  table.append(thead, tbody);
+  wrap.append(table);
+  box.append(wrap);
 }
 
-// 基本統計の表示
-export function updateBasicStats(stats) {
-  const container = document.getElementById('basicStats');
-  container.innerHTML = '';
-  
-  const statItems = [
-    { label: '文字数', value: stats.length },
-    { label: 'IC (重複度)', value: stats.ioc, help: '文字の重複度。英語は約0.066' },
-    { label: 'χ² 統計量', value: stats.chi2, help: '英語との頻度差。小さいほど英語に近い' },
-    { label: '英語らしさ', value: stats.englishness }
+function renderLinks(r) {
+  const box = $('toolLinks');
+  const links = TOOL_LINKS[r.winner] || [];
+  box.replaceChildren();
+  box.classList.toggle('hidden', links.length === 0);
+  if (!links.length) return;
+  box.append(el('div', 'tool-header', t('links.title')));
+  const list = el('ul', 'tool-list');
+  for (const [key, path] of links) {
+    const a = el('a', 'tool-link', t(key));
+    a.href = BASE + path;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    const li = el('li');
+    li.append(a);
+    list.append(li);
+  }
+  box.append(list);
+}
+
+export function renderDetails(r) {
+  const stats = $('basicStats');
+  const items = [
+    [t('stats.letters'), String(r.n)],
+    [t('stats.ic'), r.values.ic.toFixed(4)],
+    [t('stats.chi'), r.values.chiEnglish.toFixed(3)],
+    [t('stats.distinct'), String(r.values.distinct)]
   ];
+  stats.replaceChildren(...items.map(([label, value]) => {
+    const d = el('div', 'stat-item');
+    d.append(el('div', 'stat-label', label), el('div', 'stat-value', value));
+    return d;
+  }));
 
-  statItems.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'stat-item';
-    div.innerHTML = `
-      <div class="stat-label">
-        ${item.label}
-        ${item.help ? `<span title="${item.help}" style="cursor:help">ℹ️</span>` : ''}
-      </div>
-      <div class="stat-value">${item.value}</div>
-    `;
-    container.appendChild(div);
+  drawFrequencyChart($('freqChart'), r.counts, r.n, r.english);
+  const table = $('freqTable');
+  const head = el('tr');
+  for (const h of ['freq.colLetter', 'freq.colCount', 'freq.colPercent', 'freq.colEnglish']) {
+    const th = el('th', '', t(h));
+    th.scope = 'col';
+    head.append(th);
+  }
+  const rows = r.counts.map((c, i) => {
+    const tr = el('tr');
+    const th = el('th', '', String.fromCharCode(65 + i));
+    th.scope = 'row';
+    tr.append(th, el('td', 'num', String(c)), el('td', 'num', ((c / r.n) * 100).toFixed(1)), el('td', 'num', (r.english[i] * 100).toFixed(1)));
+    return tr;
   });
-}
+  const thead = el('thead');
+  thead.append(head);
+  const tbody = el('tbody');
+  tbody.append(...rows);
+  table.replaceChildren(thead, tbody);
+  $('freqTableSummary').textContent = t('freq.table');
 
-// エラー表示
-export function showError(message) {
-  const mainResult = document.getElementById('mainResult');
-  mainResult.classList.remove('hidden');
-  document.getElementById('winnerName').textContent = 'エラー';
-  document.getElementById('winnerDesc').textContent = message;
-  document.getElementById('confidenceLevel').style.width = '0%';
-  document.getElementById('confidenceText').textContent = '0%';
-}
-
-// 入力エラーメッセージの表示・非表示
-export function showInputError(errors) {
-  const errorDiv = document.getElementById('inputError');
-  const errorMessage = errorDiv.querySelector('.error-message');
-  const textarea = document.getElementById('cipherText');
-  
-  if (errors.length > 0) {
-    // エラーメッセージを表示
-    errorMessage.textContent = errors.join(' ');
-    errorDiv.classList.remove('hidden');
-    textarea.classList.add('error');
+  drawPeriodChart($('periodChart'), r.keyLength.curve, r.keyLength.candidates, KEY_IC_THRESHOLD);
+  const info = $('keyLengthInfo');
+  info.replaceChildren();
+  if (!r.keyLength.curve.length) {
+    info.append(el('span', '', t('period.none')));
   } else {
-    // エラーメッセージを非表示
-    errorDiv.classList.add('hidden');
-    textarea.classList.remove('error');
+    info.append(el('span', '', t('period.candidates', { threshold: KEY_IC_THRESHOLD, list: r.keyLength.candidates })));
+    if (r.winner !== 'vigenere') info.append(el('span', 'muted', ` ${t('period.notVigenere')}`));
+    if (r.bucket && r.keyStats) {
+      const ks = r.keyStats;
+      const params = { range: rangeText(r.bucket), top1: percent(ks.top1, ks.count), top3: percent(ks.top3, ks.count) };
+      info.append(el('span', 'muted block', t('period.accuracy', params)));
+    }
   }
+  drawKasiskiChart($('kasiskiChart'), r.kasiski.byPeriod);
+  $('kasiskiInfo').textContent = r.kasiski.repeats ? t('kasiski.summary', { repeats: r.kasiski.repeats }) : t('kasiski.none');
 }
 
-// リアルタイム入力検証
-export function validateInput() {
-  const textarea = document.getElementById('cipherText');
-  const input = textarea.value;
-  
-  const validation = validateCipherInput(input);
-  showInputError(validation.errors);
-  
-  return validation.isValid;
+// 解析結果を描く
+export function renderResult(r) {
+  $('mainResult').classList.remove('hidden');
+  $('winnerName').textContent = cipherName(r, r.winner);
+  $('winnerDesc').textContent = t(r.winner === 'adfgvx' && r.variant === 'adfgx' ? 'desc.adfgx' : `desc.${r.winner}`);
+  renderMeasured(r);
+  const notes = $('resultNotes');
+  notes.replaceChildren(...r.notes.filter((n) => n.key !== 'note.ignored' && n.key !== 'note.fewLetters').map((n) => el('li', '', noteText(n))));
+  notes.classList.toggle('hidden', notes.children.length === 0);
+  renderOthers(r);
+  renderEvidence(r);
+  renderLinks(r);
+  renderDetails(r);
+  document.querySelectorAll('.toggle-section').forEach((s) => s.classList.remove('hidden'));
+  setStale(false);
 }
 
-// 判定根拠の表示
-export function updateEvidence(results) {
-  const evidenceContent = document.getElementById('evidenceContent');
-  if (!evidenceContent) return;
-
-  const evidences = generateEvidence(results);
-  evidenceContent.innerHTML = '';
-
-  evidences.forEach(evidenceGroup => {
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'evidence-group';
-    
-    const title = document.createElement('h4');
-    title.textContent = evidenceGroup.title;
-    groupDiv.appendChild(title);
-
-    evidenceGroup.items.forEach(item => {
-      const itemDiv = document.createElement('div');
-      
-      if (evidenceGroup.type === 'statistical') {
-        itemDiv.className = 'evidence-item';
-        itemDiv.innerHTML = `
-          <div class="evidence-header">
-            <span class="evidence-metric">${item.metric}</span>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <span class="evidence-value">${item.value}</span>
-              <span class="confidence-badge confidence-${item.confidence}">${item.confidence}</span>
-            </div>
-          </div>
-          <div class="evidence-description">${item.analysis}</div>
-        `;
-      } else if (evidenceGroup.type === 'cipher-specific') {
-        itemDiv.className = 'evidence-item';
-        itemDiv.innerHTML = `
-          <div class="evidence-header">
-            <span class="evidence-metric">${item.evidence}</span>
-            <span class="confidence-badge strength-${item.strength}">${item.strength}</span>
-          </div>
-          <div class="evidence-description">${item.description}</div>
-        `;
-      } else if (evidenceGroup.type === 'excluded') {
-        itemDiv.className = 'excluded-item';
-        itemDiv.innerHTML = `
-          <span class="excluded-cipher">${item.cipher}</span>
-          <span class="excluded-reason">${item.reason}</span>
-          <span class="excluded-prob">${item.probability}%</span>
-        `;
+// ヘルプの中の、特徴量の説明と長さ別の正答率の表（辞書とモデルから組み立てる）
+export function renderHelpExtras(root, model = MODEL) {
+  const dl = root.querySelector('#helpFeatures');
+  if (dl) {
+    dl.replaceChildren(...FEATURES.flatMap((f) => [el('dt', '', t(`feature.${f.id}`)), el('dd', '', t(`featureHelp.${f.id}`))]));
+  }
+  const table = root.querySelector('#helpAccuracy');
+  if (table) {
+    const head = el('tr');
+    const corner = el('th', '', t('help.colCipher'));
+    corner.scope = 'col';
+    head.append(corner);
+    for (const b of model.buckets) {
+      const th = el('th', '', b.max === null ? t('help.bucketOpen', { min: b.min }) : t('help.bucketClosed', { min: b.min, max: b.max }));
+      th.scope = 'col';
+      head.append(th);
+    }
+    const thead = el('thead');
+    thead.append(head);
+    const tbody = el('tbody');
+    for (const c of model.classes) {
+      const tr = el('tr');
+      const th = el('th', '', t(`cipher.${c}`));
+      th.scope = 'row';
+      tr.append(th);
+      for (const b of model.buckets) {
+        const e = model.evaluation[b.id];
+        tr.append(el('td', 'num', `${percent(e.confusion[c][c], e.perClass)}%`));
       }
-      
-      groupDiv.appendChild(itemDiv);
-    });
-
-    evidenceContent.appendChild(groupDiv);
-  });
-}
-
-// 全体的なUI更新
-export function updateUI(analysis) {
-  if (!analysis.success) {
-    showError(analysis.error);
-    return;
-  }
-
-  const results = analysis.results;
-  
-  // メイン結果を更新
-  updateMainResult(results.winner);
-  
-  // その他の可能性を更新
-  updateOtherPossibilities(results.probabilities, results.winner);
-  
-  // 判定根拠を更新
-  updateEvidence(results);
-  
-  // 解析ツールリンクを表示
-  updateCipherToolLinks(results.winner.type);
-  
-  // 詳細分析ボタンのセクションを表示
-  const toggleSections = document.querySelectorAll('.toggle-section');
-  toggleSections.forEach(section => section.classList.remove('hidden'));
-  
-  // 基本統計を更新
-  if (results.stats) {
-    updateBasicStats(results.stats);
-  }
-  
-  // 可視化を更新
-  if (results.visualData) {
-    if (results.visualData.frequencies) {
-      drawFrequencyChart(results.visualData.frequencies, results.length);
+      tbody.append(tr);
     }
-    if (results.visualData.autocorrelation) {
-      drawAutocorrelation(results.visualData.autocorrelation);
-    }
-    if (results.visualData.gcdHistogram) {
-      drawGCDHistogram(results.visualData.gcdHistogram);
-    }
+    table.replaceChildren(el('caption', '', t('help.accuracyCaption', { count: model.evaluation[model.buckets[0].id].perClass })), thead, tbody);
   }
 }
 
-// セクションの表示/非表示を切り替え
-export function toggleSection(sectionId, buttonId, showText, hideText) {
-  const section = document.getElementById(sectionId);
-  const button = document.getElementById(buttonId);
-  
-  if (section && button) {
-    section.classList.toggle('hidden');
-    button.textContent = section.classList.contains('hidden') ? showText : hideText;
-  }
+export function setDetailsOpen(open) {
+  $('detailsSection').classList.toggle('hidden', !open);
+  const btn = $('toggleDetails');
+  btn.setAttribute('aria-expanded', String(open));
+  btn.textContent = open ? t('details.hide') : t('details.show');
 }
 
-// フォームをクリア
-export function clearForm() {
-  document.getElementById('cipherText').value = '';
-  document.getElementById('mainResult').classList.add('hidden');
-  document.getElementById('detailsSection').classList.add('hidden');
-  
-  // 詳細分析ボタンのセクションも非表示にする
-  const toggleSections = document.querySelectorAll('.toggle-section');
-  toggleSections.forEach(section => section.classList.add('hidden'));
-  
-  const advancedSection = document.getElementById('advancedSection');
-  if (advancedSection) {
-    advancedSection.classList.add('hidden');
-  }
-  
-  // エラーメッセージもクリア
-  showInputError([]);
-  
-  // ボタンテキストをリセット
-  resetToggleButtons();
-}
-
-// トグルボタンのテキストをリセット
-function resetToggleButtons() {
-  const toggleDetails = document.getElementById('toggleDetails');
-  const toggleAdvanced = document.getElementById('toggleAdvanced');
-  
-  if (toggleDetails) {
-    toggleDetails.textContent = '📊 詳細な分析を見る';
-  }
-  
-  if (toggleAdvanced) {
-    toggleAdvanced.textContent = '🔬 専門家向け分析を見る';
-  }
-}
-
-// ボタンの有効/無効を更新
-export function updateButtonStates() {
-  const cipherText = document.getElementById('cipherText');
-  const btnAnalyze = document.getElementById('btnAnalyze');
-  const btnClear = document.getElementById('btnClear');
-  
-  
-  if (cipherText && btnAnalyze && btnClear) {
-    const hasText = cipherText.value.trim().length > 0;
-    
-    btnAnalyze.disabled = !hasText;
-    btnClear.disabled = !hasText;
-    
-    // 無効時のスタイルを適用
-    if (!hasText) {
-      btnAnalyze.classList.add('disabled');
-      btnClear.classList.add('disabled');
-    } else {
-      btnAnalyze.classList.remove('disabled');
-      btnClear.classList.remove('disabled');
-    }
-  }
+export function clearResult() {
+  $('mainResult').classList.add('hidden');
+  document.querySelectorAll('.toggle-section').forEach((s) => s.classList.add('hidden'));
+  setDetailsOpen(false);
+  setStale(false);
+  showInputMessages([], []);
 }
