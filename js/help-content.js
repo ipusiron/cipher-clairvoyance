@@ -10,7 +10,7 @@ const JA = `
     <h4>🔮 このツールについて</h4>
     <p>Cipher Clairvoyance（サイファー・クレアボヤンス）は、英文を古典暗号で暗号化した文から、使われた方式を推定する教育用ツールです。
     判定に使った統計値をすべて表で見せ、「この長さの暗号文でこの判定が出たとき、実際に当たっていた割合」を実測値で示します。
-    シーザー・アフィン・ヴィジュネル・オートキーは、鍵を推し量って平文に戻す「試し解き」も行います。</p>
+    シーザー・アフィン・ヴィジュネル・オートキー・ヒル（2×2）は、鍵を推し量って平文に戻す「試し解き」も行います。戻した文はボタンでコピーできます。</p>
   </section>
 
   <section class="help-section">
@@ -37,6 +37,7 @@ const JA = `
       <li><strong>オートキー暗号</strong>：最初の数文字（プライマー）のあとは平文そのものを鍵にする。周期がありません（試し解きあり）</li>
       <li><strong>プレイフェア暗号</strong>：5×5の表で2文字ずつ置き換える</li>
       <li><strong>バイフィッド暗号</strong>：5×5の表の行と列の数字を分けてつなぎ直す</li>
+      <li><strong>ヒル暗号（2×2）</strong>：2文字ずつ2×2の鍵の行列を掛けて置き換える。試し解きで鍵の行列まで推し量ります（3×3は対象外）</li>
       <li><strong>転置式暗号</strong>：字は変えずに並びを入れ替える（レールフェンス・縦列転置・回転グリルなど、どれかまでは区別しません）</li>
       <li><strong>ADFGX／ADFGVX暗号</strong>：暗号文がA・D・F・G・(V)・Xだけでできていれば、統計を使わずに判定します</li>
       <li><strong>ポリュビオス暗号</strong>：1〜5の数字の組だけの入力は、標準の表で字に戻してから判定します（標準の表なら「英語の平文のまま」、表を並べ替えていれば「単一換字式暗号」と出ます）</li>
@@ -49,7 +50,7 @@ const JA = `
       <li><strong>当たっていた割合</strong>：学習に使っていない英文（ディケンズ『二都物語』）を、各方式で同じ件数ずつ暗号化して判定し、
         「この長さ帯でこの方式と判定されたもののうち、本当にその方式だった割合」を数えた実測値です。どの方式も同じくらい出てくる、という前提の値で、対象外の方式は含みません</li>
       <li><strong>試し解き</strong>：戻した文が英語らしいか（隣り合う2文字の組の出やすさ）だけを手がかりに鍵を選んでいます。英文らしく戻れば、判定と鍵の両方が正しい見込みが高くなります</li>
-      <li><strong>2段目の見分け</strong>：ヴィジュネル暗号とオートキー暗号は統計値がよく似るので、英字50字以上なら両方で試し解きをして、英文らしく戻った方を1位にします</li>
+      <li><strong>2段目の見分け</strong>：ヴィジュネル暗号・オートキー暗号・ヒル暗号は統計値がよく似るので、英字50字以上なら3つとも試し解きをして、英文らしく戻った方を1位にします</li>
       <li><strong>接戦</strong>：1位と2位の当てはまりの差が小さいときに知らせます。差が小さいときの当たり方も実測値で添えます</li>
       <li><strong>ほかの候補</strong>：当てはまりのよい順に並べた順位です。確率の数字は出しません（このモデルの確率は高く出すぎるためです）</li>
       <li><strong>対象外の方式の可能性</strong>：英字200字以上あるのに試し解きで英文に戻らないとき、ヴィジュネル暗号なのに周期が見えないときに知らせます</li>
@@ -59,7 +60,8 @@ const JA = `
   <section class="help-section">
     <h4>🧮 判定の仕組み</h4>
     <p>暗号文から下の10個の統計値（特徴量）を計算し、長さ帯（英字20〜49・50〜99・100〜199・200〜399・400字以上）ごとに、
-    9つの方式の「典型的な値の分布」とどれだけ合うかを比べます（単純ベイズ分類）。分布は、オースティン『高慢と偏見』の抜粋を各方式で暗号化して求めました。
+    10の方式の「典型的な値の分布」とどれだけ合うかを比べます（単純ベイズ分類）。分布は、オースティン『高慢と偏見』の抜粋を各方式で暗号化して求めました。
+    学習と評価の暗号文には、鍵の長さや埋字の違う変種（ヴィジュネルの鍵長2〜20字、プレイフェアの埋字X・Q・Z、埋字ありの縦列転置など）を混ぜています。
     学習・評価の手順は乱数の種を固定したスクリプトになっていて、何度作り直しても同じ結果になります。</p>
     <dl id="helpFeatures" class="help-features"></dl>
   </section>
@@ -74,8 +76,8 @@ const JA = `
     <h4>💡 使用上の注意</h4>
     <ul>
       <li>英語の文を暗号化したものが前提です。ほかの言語の文では、統計値が英語と違うので判定が外れます</li>
-      <li>上の一覧にない方式（ヒル暗号など）も、どれかの方式に振り分けられます。多くはヴィジュネル暗号かオートキー暗号になり、試し解きでは英文に戻りません</li>
-      <li>短い暗号文ほど外れやすくなります。とくに英字20〜49字では、ヴィジュネル暗号・オートキー暗号・バイフィッド暗号はほとんど見分けられません（上の表）</li>
+      <li>上の一覧にない方式（3×3のヒル暗号など）も、どれかの方式に振り分けられます。多くはヴィジュネル暗号・オートキー暗号・ヒル暗号のどれかになり、試し解きでは英文に戻りません</li>
+      <li>短い暗号文ほど外れやすくなります。とくに英字20〜49字では、ヴィジュネル暗号・オートキー暗号・バイフィッド暗号・ヒル暗号はほとんど見分けられません（上の表）</li>
       <li>「渡して開く」は暗号文をURLに入れます。Day043以外は暗号文がGitHub Pagesのサーバーに届くので、人に見せたくない文は渡さないでください</li>
     </ul>
   </section>
@@ -111,8 +113,8 @@ const EN = `
     <h4>🔮 About this tool</h4>
     <p>Cipher Clairvoyance is an educational tool that estimates which classical cipher was used to encrypt English text.
     It shows every statistic behind the verdict in a table, together with the measured rate at which this verdict was actually correct
-    for ciphertexts of the same length. For the Caesar, affine, Vigenère and autokey ciphers it also guesses the key and turns the text
-    back into plaintext (a "trial decryption").</p>
+    for ciphertexts of the same length. For the Caesar, affine, Vigenère, autokey and 2×2 Hill ciphers it also guesses the key and turns the text
+    back into plaintext (a "trial decryption"), which you can copy with a button.</p>
   </section>
 
   <section class="help-section">
@@ -143,6 +145,8 @@ const EN = `
         decryption)</li>
       <li><strong>Playfair cipher</strong>: letters replaced two at a time with a 5×5 table</li>
       <li><strong>Bifid cipher</strong>: the row and column numbers of a 5×5 table are split and joined again</li>
+      <li><strong>Hill cipher (2×2)</strong>: each pair of letters is multiplied by a 2×2 key matrix. The trial decryption recovers the key matrix
+        (3×3 is not supported)</li>
       <li><strong>Transposition cipher</strong>: the letters are kept and only their order changes (rail fence, columnar, turning grille and so on are
         not told apart)</li>
       <li><strong>ADFGX/ADFGVX cipher</strong>: decided without statistics when the ciphertext uses only A, D, F, G, (V) and X</li>
@@ -160,8 +164,8 @@ const EN = `
         It assumes every method is equally common, and it does not cover unsupported methods</li>
       <li><strong>Trial decryption</strong>: the key is chosen only by how English-like the result is (how common its adjacent letter pairs are).
         If it turns back into English, both the verdict and the key are very likely right</li>
-      <li><strong>Second stage</strong>: the Vigenère and autokey ciphers have very similar statistics. With 50 or more letters, both are trial-decrypted
-        and the one that turns back into English is ranked first</li>
+      <li><strong>Second stage</strong>: the Vigenère, autokey and Hill ciphers have very similar statistics. With 50 or more letters, all three are
+        trial-decrypted and the one that turns back into English is ranked first</li>
       <li><strong>Close call</strong>: shown when the fit of first and second place is close, with the measured accuracy for such cases</li>
       <li><strong>Other candidates</strong>: ranked by fit. No probabilities are shown, because this model's probabilities are overconfident</li>
       <li><strong>Possibly unsupported</strong>: shown when a text of 200 or more letters does not turn back into English in the trial decryption,
@@ -172,8 +176,10 @@ const EN = `
   <section class="help-section">
     <h4>🧮 How it works</h4>
     <p>The tool computes the 10 statistics (features) below and, for each length range (20-49, 50-99, 100-199, 200-399 and 400+ letters),
-    compares them with the typical distributions of nine methods (naive Bayes classification). The distributions come from encrypting
-    an excerpt of Jane Austen's Pride and Prejudice with each method. Training and evaluation run in a script with a fixed random seed,
+    compares them with the typical distributions of ten methods (naive Bayes classification). The distributions come from encrypting
+    an excerpt of Jane Austen's Pride and Prejudice with each method. The training and evaluation ciphertexts mix variants with
+    different key lengths and padding (Vigenère keys of 2-20 letters, Playfair padding with X, Q or Z,
+    padded columnar transposition and so on). Training and evaluation run in a script with a fixed random seed,
     so rebuilding always gives the same result.</p>
     <dl id="helpFeatures" class="help-features"></dl>
   </section>
@@ -189,10 +195,10 @@ const EN = `
     <h4>💡 Notes</h4>
     <ul>
       <li>The tool assumes encrypted English. Text in other languages has different statistics, so the verdict will be wrong</li>
-      <li>Methods not in the list above (such as the Hill cipher) are still assigned to one of the methods, usually Vigenère or autokey,
+      <li>Methods not in the list above (such as a 3×3 Hill cipher) are still assigned to one of the methods, usually Vigenère, autokey or Hill,
         and their trial decryption does not turn back into English</li>
-      <li>The shorter the text, the more often the verdict is wrong. With 20-49 letters the Vigenère, autokey and Bifid ciphers can hardly be told
-        apart (see the table above)</li>
+      <li>The shorter the text, the more often the verdict is wrong. With 20-49 letters the Vigenère, autokey, Bifid and Hill ciphers can hardly
+        be told apart (see the table above)</li>
       <li>"Open it with this ciphertext" puts the ciphertext into the URL. Except for Day043, the ciphertext reaches the GitHub Pages server,
         so do not pass text you want to keep private</li>
     </ul>

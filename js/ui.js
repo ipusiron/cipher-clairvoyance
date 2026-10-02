@@ -48,6 +48,36 @@ function trialKeyText(trial) {
   }
 }
 
+// 全文をクリップボードへ送る。使えない環境（file://・権限なし）では全文を表示して選択し、手でコピーできるようにする
+async function copyText(text, shownNode, status) {
+  try {
+    if (!navigator.clipboard || !window.isSecureContext) throw new Error('clipboard unavailable');
+    await navigator.clipboard.writeText(text);
+    status.textContent = t('trial.copied', { count: text.length });
+  } catch (e) {
+    shownNode.textContent = text;
+    const more = shownNode.parentElement.querySelector('.trial-more');
+    if (more) more.classList.add('hidden');
+    const range = document.createRange();
+    range.selectNodeContents(shownNode);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    status.textContent = t('trial.copyFailed');
+  }
+}
+
+function copyRow(text, shownNode) {
+  const row = el('div', 'copy-row');
+  const button = el('button', 'btn small copy-btn', t('trial.copy'));
+  button.type = 'button';
+  const status = el('span', 'muted copy-status');
+  status.setAttribute('role', 'status');
+  button.addEventListener('click', () => copyText(text, shownNode, status));
+  row.append(button, status);
+  return row;
+}
+
 // 試し解き（鍵の候補と、戻した文の先頭）
 function renderTrial(r) {
   const box = $('trialSection');
@@ -56,14 +86,16 @@ function renderTrial(r) {
   box.classList.toggle('hidden', !trial && !r.polybius);
   if (r.polybius) {
     box.append(el('h3', '', t('polybius.banner')));
-    box.append(el('p', 'trial-plain', r.polybius.decoded.slice(0, TRIAL_SHOWN)));
+    const decoded = el('p', 'trial-plain', r.polybius.decoded.slice(0, TRIAL_SHOWN));
+    box.append(decoded, copyRow(r.polybius.decoded, decoded));
   }
   if (!trial) return;
   box.append(el('h3', '', t('trial.title')));
   box.append(el('p', 'trial-key', trialKeyText(trial)));
   box.append(el('p', `trial-badge ${trial.englishLike ? 'is-good' : 'is-bad'}`, t(trial.englishLike ? 'trial.good' : 'trial.bad')));
-  box.append(el('p', 'trial-plain', trial.plaintext.slice(0, TRIAL_SHOWN)));
-  if (trial.plaintext.length > TRIAL_SHOWN) box.append(el('p', 'muted', t('trial.more', { shown: TRIAL_SHOWN, total: trial.plaintext.length })));
+  const plain = el('p', 'trial-plain', trial.plaintext.slice(0, TRIAL_SHOWN));
+  box.append(plain, copyRow(trial.plaintext, plain));
+  if (trial.plaintext.length > TRIAL_SHOWN) box.append(el('p', 'muted trial-more', t('trial.more', { shown: TRIAL_SHOWN, total: trial.plaintext.length })));
   box.append(el('p', 'muted', t('trial.note')));
 }
 
