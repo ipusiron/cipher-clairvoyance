@@ -7,6 +7,7 @@ import { drawFrequencyChart, drawPeriodChart, drawKasiskiChart } from './visuali
 import { KEY_IC_THRESHOLD } from './keylength.js';
 import { FEATURES } from './features.js';
 import { MODEL } from './model.js';
+import { buildToolLinks } from './links.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,16 +20,6 @@ function el(tag, className, text) {
 
 const percent = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
-// 判定結果から案内する関連ツール（いずれも「生成AIで作るセキュリティツール100」）
-const BASE = 'https://ipusiron.github.io/';
-export const TOOL_LINKS = {
-  caesar: [['links.caesar', 'caesar-cipher-breaker/'], ['links.frequency', 'frequency-analyzer/']],
-  affine: [['links.affine', 'affine-cipherlab/'], ['links.frequency', 'frequency-analyzer/']],
-  substitution: [['links.cipherclimb', 'cipherclimb/'], ['links.frequency', 'frequency-analyzer/']],
-  vigenere: [['links.vigenere', 'vigenere-cipher-tool/'], ['links.repeatseq', 'repeatseq-analyzer/'], ['links.ic', 'ic-learning-visualizer/']],
-  playfair: [['links.playfair', 'playfair-cipherlab/']],
-  transposition: [['links.railfence', 'railfence-cipherlab/'], ['links.columnar', 'columnar-cipherlab/'], ['links.grille', 'grille-cipherlab/']]
-};
 
 export function rangeText(bucket) {
   return bucket.max === null ? t('range.open', { min: bucket.min }) : t('range.closed', { min: bucket.min, max: bucket.max });
@@ -200,24 +191,37 @@ function renderEvidence(r) {
   box.append(wrap);
 }
 
+function newTabLink(className, text, href) {
+  const a = el('a', className, text);
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  return a;
+}
+
+// 関連ツール。受け取り口のあるツールには「暗号文を渡して開く」を添える
 function renderLinks(r) {
   const box = $('toolLinks');
-  const links = TOOL_LINKS[r.winner] || [];
+  const period = r.keyLength.candidates[0] ?? null;
+  const links = r.polybius ? [] : buildToolLinks(r.winner, r.letters, period);
   box.replaceChildren();
   box.classList.toggle('hidden', links.length === 0);
   if (!links.length) return;
   box.append(el('div', 'tool-header', t('links.title')));
   const list = el('ul', 'tool-list');
-  for (const [key, path] of links) {
-    const a = el('a', 'tool-link', t(key));
-    a.href = BASE + path;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    const li = el('li');
-    li.append(a);
+  let passes = false;
+  for (const link of links) {
+    const li = el('li', 'tool-item');
+    li.append(newTabLink('tool-link', t(link.key), link.href));
+    if (link.pass) {
+      passes = true;
+      if (link.pass.tooLong) li.append(el('span', 'muted', t('links.tooLong', { max: link.pass.max.toLocaleString('en-US') })));
+      else li.append(newTabLink('tool-pass', t(link.pass.key, { n: link.pass.period }), link.pass.href));
+    }
     list.append(li);
   }
   box.append(list);
+  if (passes) box.append(el('p', 'muted pass-note', t('links.passNote')));
 }
 
 export function renderDetails(r) {

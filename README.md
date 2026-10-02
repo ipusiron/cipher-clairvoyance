@@ -212,6 +212,7 @@ npm test
 - [Grille CipherLab（Day024）](https://ipusiron.github.io/grille-cipherlab/): 回転グリル暗号
 - [Playfair CipherLab（Day027）](https://ipusiron.github.io/playfair-cipherlab/): プレイフェア暗号
 - [RepeatSeq Analyzer（Day028）](https://ipusiron.github.io/repeatseq-analyzer/): 繰り返しから鍵長を調べる
+- [Modular Text Divider（Day030）](https://ipusiron.github.io/modular-text-divider/): 周期ごとの列に分けて解く
 - [RailFence CipherLab（Day034）](https://ipusiron.github.io/railfence-cipherlab/): レールフェンス暗号
 - [Columnar CipherLab（Day043）](https://ipusiron.github.io/columnar-cipherlab/): 縦列転置式暗号
 - [IC Learning Visualizer（Day047）](https://ipusiron.github.io/ic-learning-visualizer/): 一致指数を学ぶ
@@ -242,6 +243,7 @@ cipher-clairvoyance/
 │   ├── file-check.js         # file://で起動できなかったときの案内
 │   ├── help-content.js       # ヘルプの本文
 │   ├── keylength.js          # ヴィジュネル暗号の鍵長の推定とカシスキー法の集計
+│   ├── links.js              # 関連ツールと、暗号文を渡して開くリンク
 │   ├── messages.js           # 画面に出す文言の辞書
 │   ├── model.js              # 判定モデル（tools/build-model.mjsが生成）
 │   ├── samples.js            # サンプル暗号文（tools/build-samples.mjsが生成）
@@ -257,6 +259,7 @@ cipher-clairvoyance/
 │   ├── features.test.js      # 特徴量と鍵長の推定
 │   ├── format.test.js        # 行の長さと行数（詰め込みの検出）
 │   ├── html.test.js          # index.htmlの静的検査（CSP・属性・要素）
+│   ├── links.test.js         # 関連ツールのリンクと受け渡しのURL
 │   ├── messages.test.js      # 文言の辞書
 │   ├── model.test.js         # モデルの再生成の一致・形・評価の下限
 │   ├── readme.test.js        # READMEの表・メタデータ・ディレクトリー構造

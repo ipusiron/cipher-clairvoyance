@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MODEL } from '../js/model.js';
 import { CIPHER_SAMPLES } from '../js/samples.js';
-import { TOOL_LINKS } from '../js/ui.js';
+import { allToolUrls } from '../js/links.js';
 import { t } from '../js/messages.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -90,7 +90,7 @@ test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデル�
 test('サンプルの件数と関連ツールの一覧が実装と一致する', () => {
   assert.ok(readme.includes(`サンプル${CIPHER_SAMPLES.length}件`));
   assert.ok(readme.includes(`${CIPHER_SAMPLES.length}種類の練習用の暗号文`));
-  const urls = new Set(Object.values(TOOL_LINKS).flat().map(([, p]) => `https://ipusiron.github.io/${p}`));
+  const urls = allToolUrls();
   for (const u of urls) assert.ok(section(readme, '🔗 関連ツール').includes(`(${u})`), u);
 });
 

@@ -5,7 +5,7 @@ import { MESSAGES, t } from '../js/messages.js';
 import { MODEL } from '../js/model.js';
 import { FEATURES } from '../js/features.js';
 import { CIPHER_SAMPLES } from '../js/samples.js';
-import { TOOL_LINKS } from '../js/ui.js';
+import { buildToolLinks, LINKS_BY_TYPE } from '../js/links.js';
 
 const ja = MESSAGES.ja;
 const read = (f) => fs.readFileSync(new URL(`../js/${f}`, import.meta.url), 'utf8');
@@ -31,7 +31,12 @@ test('判定・特徴量・サンプル・関連ツールの文言がそろっ�
     assert.ok(ja[`sample.desc.${s.id}`], s.id);
     for (const k of Object.keys(s.params)) assert.ok(ja[`sample.param.${k}`], k);
   }
-  for (const list of Object.values(TOOL_LINKS)) for (const [key] of list) assert.ok(ja[key], key);
+  for (const type of Object.keys(LINKS_BY_TYPE)) {
+    for (const link of buildToolLinks(type, 'ABC', 5)) {
+      assert.ok(ja[link.key], link.key);
+      if (link.pass) assert.ok(ja[link.pass.key], link.pass.key);
+    }
+  }
 });
 
 test('コードの中で t() に直接書いたキーは、すべて辞書にある', () => {
