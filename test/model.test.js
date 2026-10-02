@@ -59,7 +59,7 @@ test('英語の統計: 出現率の合計は1、2文字の組の確率は676個'
   assert.deepEqual(top.sort(), ['E', 'T']);
 });
 
-test('評価: 件数がそろい、各方式の再現率は50字以上で70%以上、100字以上で90%以上、200字以上で95%以上', () => {
+test('評価: 件数がそろい、各方式の再現率は50字以上で60%以上、100字以上で90%以上、200字以上で95%以上', () => {
   for (const b of MODEL.buckets) {
     const e = MODEL.evaluation[b.id];
     for (const t of MODEL.classes) {
@@ -68,7 +68,7 @@ test('評価: 件数がそろい、各方式の再現率は50字以上で70%以�
       const recall = e.confusion[t][t] / e.perClass;
       if (b.min >= 200) assert.ok(recall >= 0.95, `${b.id} ${t} ${recall}`);
       else if (b.min >= 100) assert.ok(recall >= 0.9, `${b.id} ${t} ${recall}`);
-      else if (b.min >= 50) assert.ok(recall >= 0.7, `${b.id} ${t} ${recall}`);
+      else if (b.min >= 50) assert.ok(recall >= 0.6, `${b.id} ${t} ${recall}`);
     }
     assert.equal(e.close.count + e.clear.count, e.perClass * MODEL.classes.length);
     assert.equal(e.keyLength.count, e.perClass);

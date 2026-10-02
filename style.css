@@ -556,6 +556,14 @@ textarea[aria-invalid="true"] {
   color: var(--danger);
 }
 
+.copy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
 .trial-plain {
   font-family: ui-monospace, Consolas, monospace;
   overflow-wrap: anywhere;

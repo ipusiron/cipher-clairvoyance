@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as C from '../js/cipher-core.js';
-import { solveCaesar, solveAffine, solveVigenere, solveAutokey, defaultKeyLengths, MAX_KEY_LENGTH } from '../js/solver.js';
-import { decide, STAGE2_MIN } from '../js/decide.js';
+import { solveCaesar, solveAffine, solveVigenere, solveAutokey, solveHill2, defaultKeyLengths, MAX_KEY_LENGTH } from '../js/solver.js';
+import { decide, STAGE2_MIN, STAGE2_TYPES } from '../js/decide.js';
 import { extractFeatures } from '../js/features.js';
 import { MODEL } from '../js/model.js';
 
@@ -21,8 +21,8 @@ test('シーザー・アフィンの試し解きは、全部の鍵で平文に�
   }
 });
 
-test('ヴィジュネル型の試し解き: 鍵長2〜12の鍵を当てる', () => {
-  for (const key of ['GO', 'LEMON', 'CRYPTOGRAPHY', 'ABCDEFGHIJKL']) {
+test('ヴィジュネル型の試し解き: 鍵長2〜20の鍵を当てる', () => {
+  for (const key of ['GO', 'LEMON', 'CRYPTOGRAPHY', 'ABCDEFGHIJKL', 'DECLARATIONOFLIBERTY']) {
     const r = solveVigenere(C.vigenereEncrypt(PLAIN, key), E);
     assert.deepEqual([r.variant, r.key, r.plaintext], ['vigenere', key, PLAIN]);
   }
@@ -40,6 +40,15 @@ test('オートキーの試し解き: プライマーの長さと字を当てる
   }
 });
 
+test('ヒル暗号（2×2）の試し解き: 鍵の行列と逆行列を当てる', () => {
+  for (const key of [[[3, 3], [2, 5]], [[5, 8], [17, 3]], [[1, 2], [3, 9]]]) {
+    const r = solveHill2(C.hill2Encrypt(PLAIN, key), E);
+    assert.deepEqual([r.key, r.plaintext], [key, PLAIN]);
+    assert.deepEqual(C.inverse2(r.key), r.inverse);
+  }
+  assert.equal(solveHill2('AB', E), null);
+});
+
 test('鍵長の候補は MAX_KEY_LENGTH 以下から最大3つ。なければ1を試す', () => {
   const list = defaultKeyLengths(C.vigenereEncrypt(PLAIN, 'LEMON'));
   assert.ok(list.length >= 1 && list.length <= 3);
@@ -48,15 +57,21 @@ test('鍵長の候補は MAX_KEY_LENGTH 以下から最大3つ。なければ1�
   assert.deepEqual(defaultKeyLengths('ABCDEFG'), [1]);
 });
 
-test('2段目: 英字 STAGE2_MIN 字以上で1位が多表式なら、試し解きで英語らしい方を1位にする', () => {
-  const vig = C.vigenereEncrypt(PLAIN, 'ATTIC');
-  const auto = C.autokeyEncrypt(PLAIN, 'ATTIC');
-  const dv = decide(vig, extractFeatures(vig, E).vector, MODEL);
-  const da = decide(auto, extractFeatures(auto, E).vector, MODEL);
-  assert.deepEqual([dv.winner, dv.second], ['vigenere', 'autokey']);
-  assert.deepEqual([da.winner, da.second], ['autokey', 'vigenere']);
-  assert.ok(dv.stage2 && da.stage2);
-  assert.equal(dv.close, false);
+test('2段目: 英字 STAGE2_MIN 字以上で1位がヴィジュネル・オートキー・ヒルのどれかなら、3つとも試し解きして英語らしい方を1位にする', () => {
+  assert.deepEqual(STAGE2_TYPES, ['vigenere', 'autokey', 'hill']);
+  const cases = [
+    ['vigenere', C.vigenereEncrypt(PLAIN, 'ATTIC')],
+    ['autokey', C.autokeyEncrypt(PLAIN, 'ATTIC')],
+    ['hill', C.hill2Encrypt(PLAIN, [[3, 3], [2, 5]])]
+  ];
+  for (const [type, c] of cases) {
+    const d = decide(c, extractFeatures(c, E).vector, MODEL);
+    assert.equal(d.winner, type);
+    assert.ok(d.stage2);
+    assert.deepEqual([...d.types.slice(0, 3)].sort(), [...STAGE2_TYPES].sort());
+    assert.ok(STAGE2_TYPES.includes(d.second));
+    assert.equal(d.close, false);
+  }
   const short = C.vigenereEncrypt(PLAIN.slice(0, STAGE2_MIN - 1), 'ATTIC');
   assert.equal(decide(short, extractFeatures(short, E).vector, MODEL).stage2, null);
   const caesar = C.caesarEncrypt(PLAIN, 3);

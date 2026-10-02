@@ -35,6 +35,7 @@ function decrypt(sample) {
     case 'autokey': return C.autokeyDecrypt(c, p.primer);
     case 'beaufort': return C.beaufortEncrypt(c, p.keyword);
     case 'trapShortVigenere': return C.vigenereDecrypt(c, p.keyword);
+    case 'hill': return C.hill2Decrypt(c, [[3, 3], [2, 5]]);
     default: return null;
   }
 }
@@ -52,9 +53,8 @@ test('各サンプルを書かれた鍵で復号すると平文に戻る', () =>
       assert.equal(C.lettersOnly(s.ciphertext), C.bifidEncrypt(SAMPLE_PLAINTEXT, C.playfairSquare(s.params.keyword)));
       continue;
     }
-    if (s.id === 'trapHill') {
-      assert.equal(C.lettersOnly(s.ciphertext), C.hill2Encrypt(SAMPLE_PLAINTEXT, [[3, 3], [2, 5]]));
-      assert.equal(s.params.matrix, '3 3 / 2 5');
+    if (s.id === 'trapHill3') {
+      assert.equal(C.lettersOnly(s.ciphertext), C.hillEncrypt(SAMPLE_PLAINTEXT, [[6, 24, 1], [13, 16, 10], [20, 17, 15]]));
       continue;
     }
     if (s.id === 'polybius') {

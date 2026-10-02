@@ -158,7 +158,7 @@ test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデル�
   const algorithm = read('ALGORITHM.md');
   const names = {
     plain: '英語の平文', caesar: 'シーザー', affine: 'アフィン', substitution: '単一換字', vigenere: 'ヴィジュネル',
-    autokey: 'オートキー', playfair: 'プレイフェア', bifid: 'バイフィッド', transposition: '転置'
+    autokey: 'オートキー', playfair: 'プレイフェア', bifid: 'バイフィッド', hill: 'ヒル（2×2）', transposition: '転置'
   };
   const start = algorithm.indexOf('| 方式 | ic |');
   assert.ok(start >= 0);

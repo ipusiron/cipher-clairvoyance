@@ -50,6 +50,7 @@ const JA = {
   'cipher.autokey': 'オートキー暗号',
   'cipher.playfair': 'プレイフェア暗号',
   'cipher.bifid': 'バイフィッド暗号',
+  'cipher.hill': 'ヒル暗号（2×2）',
   'cipher.transposition': '転置式暗号',
   'cipher.adfgvx': 'ADFGVX暗号',
   'cipher.adfgx': 'ADFGX暗号',
@@ -63,6 +64,7 @@ const JA = {
   'desc.autokey': '鍵の流れに平文そのものを使う多表式の暗号です。最初の数文字（プライマー）のあとは、平文の字の分だけずらします。周期がありません。',
   'desc.playfair': '5×5の表を使い、2文字ずつまとめて置き換える暗号です（IとJを同じ字として扱います）。',
   'desc.bifid': '5×5の表で字を行と列の数字に分け、行の数字の列と列の数字の列をつないでから、2つずつ字に戻す暗号です（IとJを同じ字として扱います）。',
+  'desc.hill': '2文字を1組のベクトルとみなし、2×2の鍵の行列を掛けて置き換える暗号です（26を法とする計算）。',
   'desc.transposition': '文字は変えず、並び順だけを入れ替える暗号です（レールフェンス・縦列転置・回転グリルなど）。',
   'desc.adfgvx': '文字を表の座標（A・D・F・G・V・X）に置き換えたうえで、縦列転置をかける暗号です。',
   'desc.adfgx': '文字を5×5の表の座標（A・D・F・G・X）に置き換えたうえで、縦列転置をかける暗号です。',
@@ -78,12 +80,12 @@ const JA = {
     + '数字で書く暗号は、1〜5の数字の組のポリュビオス暗号だけを読みます。',
   'note.close': '1位と2位（{second}）の差が小さく、どちらとも言い切れません。評価用の英文で差が小さかった場合、当たっていたのは{correct}／{count}件でした。',
   'note.noPeriod': '英字が{min}字以上あるのに、鍵の周期が見つかりません。周期のない多表式暗号（オートキー暗号など）や、ヴィジュネル暗号でも文の長さに比べて長すぎる鍵の可能性があります。',
-  'note.stage2': 'ヴィジュネル暗号とオートキー暗号は統計値がよく似るので、両方で試し解きをして、英文らしく戻った方を1位にしました（2位は{other}）。',
-  'note.polyShort': '英字{min}字未満では、ヴィジュネル暗号・オートキー暗号・バイフィッド暗号などの多表式は、統計値ではほとんど見分けられません。2位以下の方式も試してください。'
-    + '評価では、この長さでこの3つのどれかと判定したもののうち、実際にそのどれかだったのは{correct}／{predicted}件でした。',
+  'note.stage2': 'ヴィジュネル暗号・オートキー暗号・ヒル暗号は統計値がよく似るので、3つとも試し解きをして、英文らしく戻った方を1位にしました（2位は{other}）。',
+  'note.polyShort': '英字{min}字未満では、ヴィジュネル暗号・オートキー暗号・バイフィッド暗号・ヒル暗号は、統計値ではほとんど見分けられません。2位以下の方式も試してください。'
+    + '評価では、この長さでこの4つのどれかと判定したもののうち、実際にそのどれかだったのは{correct}／{predicted}件でした。',
   'note.polybius': '入力が1〜5の数字の組（{pairs}組）だけでできているので、ポリュビオス暗号として標準の表（A〜Z、IとJは同じ）で字に戻し、その文を判定しました。'
     + '標準の表なら「英語の平文のまま」、表を並べ替えていれば「単一換字式暗号」と出ます。',
-  'note.trialFailed': '英字が{min}字以上あるのに、試し解きで英文に戻りませんでした。判定した方式ではなく、このツールの対象外の方式（ヒル暗号など）の可能性があります。',
+  'note.trialFailed': '英字が{min}字以上あるのに、試し解きで英文に戻りませんでした。判定した方式ではなく、このツールの対象外の方式（3×3のヒル暗号など）の可能性があります。',
   'note.short': '{max}字以下の短い暗号文です。判定が外れやすい長さなので、上に出した「当たっていた割合」とあわせて読んでください。',
   'note.adfgvxOdd': '文字数が奇数です。ADFGX／ADFGVXの暗号文は通常は偶数の長さになるので、写し間違いや欠けがないか確かめてください。',
   'note.stale': '入力が変わりました。結果は前の入力のものです。もう一度「解析開始」を押してください。',
@@ -107,6 +109,10 @@ const JA = {
   'trial.vigenere': '鍵長：{length}、鍵：{key}',
   'trial.beaufort': 'ボーフォート型（各列で字の並びが逆向き）、鍵長：{length}。鍵の表し方は資料によって違うので、平文だけを示します',
   'trial.autokey': 'プライマー：{primer}（{length}字）',
+  'trial.hill': '鍵の行列：{key}（復号に使う逆行列：{inverse}）',
+  'trial.copy': '戻した文をすべてコピー',
+  'trial.copied': '戻した文（{count}字）をコピーしました。',
+  'trial.copyFailed': 'この環境では自動でコピーできませんでした。全文を表示して選択したので、Ctrl＋C（Macは⌘＋C）でコピーしてください。',
   'trial.good': '英文らしく戻りました',
   'trial.bad': '英文らしくありません（鍵や方式が違う可能性があります）',
   'trial.note': '鍵は「戻した文が英語らしいか」だけを手がかりに選んでいます。短い文では外れることがあるので、平文を読んで確かめてください。',
@@ -216,7 +222,8 @@ const JA = {
   'sample.name.columnar': '縦列転置式暗号',
   'sample.name.adfgvx': 'ADFGVX暗号',
   'sample.name.polybius': 'ポリュビオス暗号（数字）',
-  'sample.name.trapHill': '判定が崩れる例：ヒル暗号',
+  'sample.name.hill': 'ヒル暗号（2×2）',
+  'sample.name.trapHill3': '判定が崩れる例：ヒル暗号（3×3）',
   'sample.name.trapShortVigenere': '判定が崩れる例：短いヴィジュネル暗号',
   'sample.desc.plain': '暗号化していない英文。「英語の平文のまま」と判定されるかを確かめられます。',
   'sample.desc.caesar': '各文字を同じ数だけずらした暗号文。',
@@ -233,7 +240,8 @@ const JA = {
   'sample.desc.columnar': 'キーワードの字の順に列を読んだ暗号文（埋字なし）。',
   'sample.desc.adfgvx': '6×6の表で文字を座標に置き換え、キーワードで縦列転置した暗号文。',
   'sample.desc.polybius': '各文字を標準の表の数字の組に置き換えたもの。字に戻してから判定します。',
-  'sample.desc.trapHill': 'このツールが対象にしていない暗号（2×2の行列で2文字ずつ変換）。対象外の方式も、どれかに振り分けられてしまう例です（{expect}と出ます）。',
+  'sample.desc.hill': '2×2の鍵の行列で2文字ずつ変換した暗号文。試し解きで鍵の行列まで推し量ります。',
+  'sample.desc.trapHill3': 'このツールが対象にしていない3×3のヒル暗号（3文字ずつ変換）。対象外の方式も、どれかに振り分けられてしまう例です（{expect}と出ます）。',
   'sample.desc.trapShortVigenere': '30字のヴィジュネル暗号。短すぎて周期が見えず、統計値では多表式のどれかまでしか分かりません（{expect}と出ます）。',
   'sample.param.shift': 'ずらす数：{value}',
   'sample.param.a': 'a＝{value}',
@@ -298,6 +306,7 @@ const EN = {
   'cipher.autokey': 'Autokey cipher',
   'cipher.playfair': 'Playfair cipher',
   'cipher.bifid': 'Bifid cipher',
+  'cipher.hill': 'Hill cipher (2×2)',
   'cipher.transposition': 'Transposition cipher',
   'cipher.adfgvx': 'ADFGVX cipher',
   'cipher.adfgx': 'ADFGX cipher',
@@ -313,6 +322,7 @@ const EN = {
   'desc.playfair': 'Letters are replaced two at a time using a 5×5 table (I and J are treated as the same letter).',
   'desc.bifid': 'Letters are split into the row and column numbers of a 5×5 table; the row numbers and the column numbers are joined, '
     + 'then read back as letters two numbers at a time (I and J are the same letter).',
+  'desc.hill': 'Each pair of letters is treated as a vector and multiplied by a 2×2 key matrix (arithmetic modulo 26).',
   'desc.transposition': 'The letters are kept and only their order is changed (rail fence, columnar transposition, turning grille and so on).',
   'desc.adfgvx': 'Letters are replaced by table coordinates (A, D, F, G, V, X) and then put through a columnar transposition.',
   'desc.adfgx': 'Letters are replaced by the coordinates of a 5×5 table (A, D, F, G, X) and then put through a columnar transposition.',
@@ -330,17 +340,17 @@ const EN = {
     + 'When the difference was this small in the evaluation text, {correct} of {count} verdicts were right.',
   'note.noPeriod': 'There are at least {min} letters, but no key period was found. It may be a polyalphabetic cipher without a period '
     + '(such as an autokey cipher), or a Vigenère cipher whose key is too long for the length of the text.',
-  'note.stage2': 'The Vigenère and autokey ciphers have very similar statistics, so both were trial-decrypted '
+  'note.stage2': 'The Vigenère, autokey and Hill ciphers have very similar statistics, so all three were trial-decrypted '
     + 'and the one that turned back into English was ranked first (second: {other}).',
-  'note.polyShort': 'With fewer than {min} letters, polyalphabetic ciphers such as the Vigenère, autokey and Bifid ciphers '
+  'note.polyShort': 'With fewer than {min} letters, the Vigenère, autokey, Bifid and Hill ciphers '
     + 'can hardly be told apart by statistics. '
-    + 'Please try the lower-ranked methods too. In the evaluation, of the verdicts at this length that named one of these three, '
+    + 'Please try the lower-ranked methods too. In the evaluation, of the verdicts at this length that named one of these four, '
     + '{correct} of {predicted} were actually one of them.',
   'note.polybius': 'The input consists only of pairs of the digits 1-5 ({pairs} pairs), so it was read as a Polybius square cipher, '
     + 'turned back into letters with the standard table (A-Z, I and J the same), and that text was analyzed. '
     + 'With the standard table the verdict is "plain English"; with a shuffled table it is "simple substitution".',
   'note.trialFailed': 'There are at least {min} letters, but the trial decryption did not turn back into English. '
-    + 'It may not be the detected method but one this tool does not cover (such as the Hill cipher).',
+    + 'It may not be the detected method but one this tool does not cover (such as a 3×3 Hill cipher).',
   'note.short': 'This is a short ciphertext of {max} letters or fewer. Verdicts are often wrong at this length, '
     + 'so read it together with the "actually correct" rate shown above.',
   'note.adfgvxOdd': 'The length is odd. ADFGX/ADFGVX ciphertexts normally have an even length, so please check for copying errors or missing letters.',
@@ -366,6 +376,10 @@ const EN = {
   'trial.beaufort': 'Beaufort type (the alphabet runs backwards in each column), key length: {length}. '
     + 'Sources write the key in different ways, so only the plaintext is shown',
   'trial.autokey': 'Primer: {primer} ({length} letters)',
+  'trial.hill': 'Key matrix: {key} (inverse used to decrypt: {inverse})',
+  'trial.copy': 'Copy the whole decrypted text',
+  'trial.copied': 'Copied the decrypted text ({count} letters).',
+  'trial.copyFailed': 'Automatic copying is not available here. The whole text is now shown and selected; press Ctrl+C (⌘+C on a Mac) to copy it.',
   'trial.good': 'Turned back into English',
   'trial.bad': 'Does not look like English (the key or the method may be wrong)',
   'trial.note': 'The key is chosen only by how English-like the result is. It can be wrong for short texts, so please read the plaintext to check.',
@@ -480,7 +494,8 @@ const EN = {
   'sample.name.columnar': 'Columnar transposition',
   'sample.name.adfgvx': 'ADFGVX cipher',
   'sample.name.polybius': 'Polybius square (digits)',
-  'sample.name.trapHill': 'A failing case: Hill cipher',
+  'sample.name.hill': 'Hill cipher (2×2)',
+  'sample.name.trapHill3': 'A failing case: Hill cipher (3×3)',
   'sample.name.trapShortVigenere': 'A failing case: a short Vigenère cipher',
   'sample.desc.plain': 'English that is not encrypted. Check that it is judged as plain English.',
   'sample.desc.caesar': 'Every letter shifted by the same amount.',
@@ -498,7 +513,8 @@ const EN = {
   'sample.desc.columnar': 'Columns read in the order of the keyword letters (no padding).',
   'sample.desc.adfgvx': 'Letters replaced by coordinates in a 6×6 table, then a columnar transposition with a keyword.',
   'sample.desc.polybius': 'Each letter replaced by a pair of numbers in the standard table. It is turned back into letters before the analysis.',
-  'sample.desc.trapHill': 'A cipher this tool does not cover (a 2×2 matrix turns two letters at a time). '
+  'sample.desc.hill': 'Two letters at a time transformed with a 2×2 key matrix. The trial decryption recovers the key matrix too.',
+  'sample.desc.trapHill3': 'A 3×3 Hill cipher, which this tool does not cover (three letters at a time). '
     + 'Even unsupported methods are assigned to one of the methods (it shows {expect}).',
   'sample.desc.trapShortVigenere': 'A 30-letter Vigenère cipher. It is too short to show a period, '
     + 'so the statistics can only narrow it down to one of the polyalphabetic ciphers (it shows {expect}).',

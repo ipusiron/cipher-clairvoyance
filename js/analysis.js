@@ -6,14 +6,14 @@ import { FEATURES, extractFeatures } from './features.js';
 import { decisiveFeatures } from './classifier.js';
 import { decide, STAGE2_MIN } from './decide.js';
 import { keyLengthCandidates, kasiskiCounts, PERIOD_CHECK_MIN } from './keylength.js';
-import { solveCaesar, solveAffine, solveVigenere, solveAutokey } from './solver.js';
+import { solveCaesar, solveAffine, solveVigenere, solveAutokey, solveHill2 } from './solver.js';
 import { MODEL } from './model.js';
 
 export const MAX_CHARS = 10000;
 export const MIN_LETTERS = 20;
-export const POLY_TYPES = ['vigenere', 'autokey'];
-// 短い文で互いに見分けにくい多表式のまとまり（お知らせと、まとまりとしての実測に使う）
-export const POLY_GROUP = ['vigenere', 'autokey', 'bifid'];
+export const POLY_TYPES = ['vigenere', 'autokey', 'hill'];
+// 短い文で互いに見分けにくい方式のまとまり（お知らせと、まとまりとしての実測に使う）
+export const POLY_GROUP = ['vigenere', 'autokey', 'bifid', 'hill'];
 const ADFGVX_RE = /^[ADFGVX]+$/;
 
 // 英字以外で無視する文字（空白・改行は数えない）
@@ -84,6 +84,10 @@ function trialFor(winner, s, model, stage2) {
     case 'affine': return { type: 'affine', ...solveAffine(s, model.english) };
     case 'vigenere': return { type: 'vigenere', ...(stage2 ? stage2.vigenere : solveVigenere(s, model.english)) };
     case 'autokey': return { type: 'autokey', ...(stage2 ? stage2.autokey : solveAutokey(s, model.english)) };
+    case 'hill': {
+      const r = stage2 ? stage2.hill : solveHill2(s, model.english);
+      return r ? { type: 'hill', ...r } : null;
+    }
     default: return null;
   }
 }
@@ -116,7 +120,7 @@ function analyzeLetters(s, model, notes) {
   const { winner, second } = d;
   const e = model.evaluation[d.bucket.id];
   if (d.close) notes.push({ key: 'note.close', params: { second, correct: e.close.correct, count: e.close.count } });
-  if (d.stage2) notes.push({ key: 'note.stage2', params: { other: winner === 'vigenere' ? 'autokey' : 'vigenere' } });
+  if (d.stage2) notes.push({ key: 'note.stage2', params: { other: second } });
   if (POLY_GROUP.includes(winner) && n < STAGE2_MIN) {
     const g = measuredGroupPrecision(model, d.bucket.id);
     notes.push({ key: 'note.polyShort', params: { min: STAGE2_MIN, correct: g.correct, predicted: g.predicted } });
