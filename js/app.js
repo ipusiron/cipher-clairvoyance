@@ -1,10 +1,11 @@
 // メインアプリケーション（イベントの登録と、モーダル・解析の流れ）
 
 import { analyze, inspectInput } from './analysis.js';
-import { renderResult, showInputMessages, updateInputCount, setStale, setDetailsOpen, clearResult } from './ui.js';
+import { renderResult, showInputMessages, updateInputCount, setStale, setDetailsOpen, clearResult, renderHelpExtras } from './ui.js';
 import { CIPHER_SAMPLES } from './samples.js';
 import { HELP_CONTENT } from './help-content.js';
 import { t } from './messages.js';
+import { initThemeToggle } from './theme.js';
 
 const $ = (id) => document.getElementById(id);
 let analyzedText = null;
@@ -35,6 +36,10 @@ function performAnalysis() {
   const result = analyze(text);
   renderResult(result);
   analyzedText = text;
+  // 読み上げ用に、結果の要点を1文で知らせる
+  $('srStatus').textContent = result.method === 'model'
+    ? t('status.result', { name: t(`cipher.${result.winner}`), percent: Math.round((result.measured.correct / result.measured.predicted) * 100) })
+    : t('status.rule', { name: t(`cipher.${result.variant}`) });
 }
 
 // モーダル: 開いたら中へフォーカスを移し、Tab を中に閉じ込め、閉じたら開いたボタンへ戻す
@@ -149,7 +154,9 @@ function init() {
   $('btnSampleSelect').addEventListener('click', (e) => openModal($('sampleModal'), e.currentTarget));
   $('modalClose').addEventListener('click', () => closeModal($('sampleModal')));
   $('btnHelp').addEventListener('click', (e) => {
-    $('helpModal').querySelector('.help-content').innerHTML = HELP_CONTENT;
+    const help = $('helpModal').querySelector('.help-content');
+    help.innerHTML = HELP_CONTENT;
+    renderHelpExtras(help);
     openModal($('helpModal'), e.currentTarget);
   });
   $('helpModalClose').addEventListener('click', () => closeModal($('helpModal')));
@@ -162,8 +169,10 @@ function init() {
     trapTab(e);
   });
 
+  initThemeToggle($('btnTheme'));
   updateButtonStates();
   updateInputCount(textarea.value);
+  document.documentElement.setAttribute('data-ready', 'true');
 }
 
 document.addEventListener('DOMContentLoaded', init);

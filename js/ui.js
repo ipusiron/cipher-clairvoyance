@@ -5,6 +5,8 @@ import { MIN_LETTERS } from './analysis.js';
 import { lettersOnly } from './cipher-core.js';
 import { drawFrequencyChart, drawPeriodChart, drawKasiskiChart } from './visualization.js';
 import { KEY_IC_THRESHOLD } from './keylength.js';
+import { FEATURES } from './features.js';
+import { MODEL } from './model.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -229,7 +231,8 @@ export function renderDetails(r) {
     if (r.winner !== 'vigenere') info.append(el('span', 'muted', ` ${t('period.notVigenere')}`));
     if (r.bucket && r.keyStats) {
       const ks = r.keyStats;
-      info.append(el('span', 'muted block', t('period.accuracy', { range: rangeText(r.bucket), top1: percent(ks.top1, ks.count), top3: percent(ks.top3, ks.count) })));
+      const params = { range: rangeText(r.bucket), top1: percent(ks.top1, ks.count), top3: percent(ks.top3, ks.count) };
+      info.append(el('span', 'muted block', t('period.accuracy', params)));
     }
   }
   drawKasiskiChart($('kasiskiChart'), r.kasiski.byPeriod);
@@ -251,6 +254,41 @@ export function renderResult(r) {
   renderDetails(r);
   document.querySelectorAll('.toggle-section').forEach((s) => s.classList.remove('hidden'));
   setStale(false);
+}
+
+// ヘルプの中の、特徴量の説明と長さ別の正答率の表（辞書とモデルから組み立てる）
+export function renderHelpExtras(root, model = MODEL) {
+  const dl = root.querySelector('#helpFeatures');
+  if (dl) {
+    dl.replaceChildren(...FEATURES.flatMap((f) => [el('dt', '', t(`feature.${f.id}`)), el('dd', '', t(`featureHelp.${f.id}`))]));
+  }
+  const table = root.querySelector('#helpAccuracy');
+  if (table) {
+    const head = el('tr');
+    const corner = el('th', '', t('help.colCipher'));
+    corner.scope = 'col';
+    head.append(corner);
+    for (const b of model.buckets) {
+      const th = el('th', '', b.max === null ? t('help.bucketOpen', { min: b.min }) : t('help.bucketClosed', { min: b.min, max: b.max }));
+      th.scope = 'col';
+      head.append(th);
+    }
+    const thead = el('thead');
+    thead.append(head);
+    const tbody = el('tbody');
+    for (const c of model.classes) {
+      const tr = el('tr');
+      const th = el('th', '', t(`cipher.${c}`));
+      th.scope = 'row';
+      tr.append(th);
+      for (const b of model.buckets) {
+        const e = model.evaluation[b.id];
+        tr.append(el('td', 'num', `${percent(e.confusion[c][c], e.perClass)}%`));
+      }
+      tbody.append(tr);
+    }
+    table.replaceChildren(el('caption', '', t('help.accuracyCaption', { count: model.evaluation[model.buckets[0].id].perClass })), thead, tbody);
+  }
 }
 
 export function setDetailsOpen(open) {

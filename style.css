@@ -23,10 +23,9 @@
   --header-to: #6d28d9;
   --on-header: #ffffff;
   --chart-observed: #2563eb;
-  --chart-expected: #cbd5e1;
+  --chart-expected: #78869b;
   --chart-hit: #c2410c;
-  --chart-over: #d97706;
-  --chart-plain: #94a3b8;
+  --chart-plain: #64748b;
   --chart-kasiski: #0f766e;
   --decisive-bg: #eff6ff;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -58,10 +57,9 @@
   --header-to: #5b21b6;
   --on-header: #ffffff;
   --chart-observed: #60a5fa;
-  --chart-expected: #52627a;
+  --chart-expected: #8494aa;
   --chart-hit: #fb923c;
-  --chart-over: #fbbf24;
-  --chart-plain: #7c8ba1;
+  --chart-plain: #8494aa;
   --chart-kasiski: #2dd4bf;
   --decisive-bg: #1e3a5f;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -94,10 +92,9 @@
     --header-to: #5b21b6;
     --on-header: #ffffff;
     --chart-observed: #60a5fa;
-    --chart-expected: #52627a;
+    --chart-expected: #8494aa;
     --chart-hit: #fb923c;
-    --chart-over: #fbbf24;
-    --chart-plain: #7c8ba1;
+    --chart-plain: #8494aa;
     --chart-kasiski: #2dd4bf;
     --decisive-bg: #1e3a5f;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -159,6 +156,21 @@ a {
   margin-top: 0.25rem;
 }
 
+/* 起動できないときの案内（JavaScript が無効・file:// で開いた） */
+.boot-notice p + p {
+  margin-top: 0.25rem;
+}
+
+.boot-notice {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--note-bg);
+  color: var(--note-text);
+  border-bottom: 1px solid var(--note-border);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 /* コンテナとヘッダー */
 .container {
   max-width: 1024px;
@@ -207,9 +219,14 @@ a {
   font-size: 1.125rem;
 }
 
-.help-icon-btn {
+.header-actions {
   grid-column: 3;
   justify-self: end;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.help-icon-btn {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -716,7 +733,6 @@ tr.is-decisive {
 .bar-observed { fill: var(--chart-observed); }
 .bar-expected { fill: var(--chart-expected); }
 .bar-hit { fill: var(--chart-hit); }
-.bar-over { fill: var(--chart-over); }
 .bar-plain { fill: var(--chart-plain); }
 .bar-kasiski { fill: var(--chart-kasiski); }
 
@@ -955,6 +971,20 @@ footer {
   color: var(--text);
 }
 
+.help-features dt {
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+.help-features dd {
+  color: var(--text-muted);
+  margin-left: 0;
+}
+
+.help-section table {
+  font-size: 0.85rem;
+}
+
 /* レスポンシブ */
 @media (max-width: 768px) {
   .container {
@@ -966,7 +996,7 @@ footer {
   }
 
   .hero,
-  .help-icon-btn {
+  .header-actions {
     grid-column: 1;
     justify-self: center;
   }

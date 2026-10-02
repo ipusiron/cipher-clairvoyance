@@ -58,7 +58,7 @@ export function drawPeriodChart(svg, curve, candidates, threshold) {
   const barWidth = width / curve.length;
   const top = new Set(candidates.slice(0, 3));
   curve.forEach((p, i) => {
-    const cls = top.has(p.k) ? 'bar-hit' : p.ic >= threshold ? 'bar-over' : 'bar-plain';
+    const cls = top.has(p.k) ? 'bar-hit' : 'bar-plain';
     const g = svgEl('g', {}, 'bar-group');
     g.append(svgEl('rect', { x: i * barWidth + 2, y: base - scale(p.ic), width: Math.max(2, barWidth - 4), height: scale(p.ic) }, cls));
     withTitle(g, t('period.barTitle', { k: p.k, ic: p.ic.toFixed(4) }));

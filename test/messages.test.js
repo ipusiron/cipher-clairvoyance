@@ -11,10 +11,10 @@ const ja = MESSAGES.ja;
 const read = (f) => fs.readFileSync(new URL(`../js/${f}`, import.meta.url), 'utf8');
 
 test('t(): 置き場所に値を入れ、配列は「、」でつなぐ。ない鍵はキーをそのまま返す', () => {
-  assert.equal(t('error.tooFewLetters', { letters: 3, min: 20 }), '英字が 3 字しかありません。判定には 20 字以上が必要です。');
+  assert.equal(t('error.tooFewLetters', { letters: 3, min: 20 }), '英字が3字しかありません。判定には20字以上が必要です。');
   assert.equal(t('period.candidates', { threshold: 0.058, list: [5, 10, 15] }).endsWith('5、10、15'), true);
   assert.equal(t('no.such.key'), 'no.such.key');
-  assert.equal(t('input.count', { letters: 1 }), '英字 1 字（判定には {min} 字以上が必要）');
+  assert.equal(t('input.count', { letters: 1 }), '英字1字（判定には{min}字以上が必要）');
 });
 
 test('判定・特徴量・サンプル・関連ツールの文言がそろっている', () => {

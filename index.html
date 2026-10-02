@@ -4,22 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>Cipher Clairvoyance — 暗号解析ツール</title>
   <meta name="description" content="Cipher Clairvoyance: 古典暗号の方式を自動判定する教育用ツール">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script src="js/theme-init.js"></script>
+  <script src="js/file-check.js" defer></script>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
+  <noscript>
+    <p class="boot-notice">このツールはJavaScriptを使います。ブラウザーの設定でJavaScriptを有効にしてください。</p>
+  </noscript>
+  <div id="fileNotice" class="boot-notice hidden" role="alert">
+    <p>このページをファイルとして直接開いたため、ブラウザーがプログラム（ES modules）を読み込めず、ツールが動いていません。</p>
+    <p>フォルダーで<code>python -m http.server 8000</code>などを実行し、<code>http://localhost:8000/</code>で開いてください。</p>
+    <p>公開版は<a href="https://ipusiron.github.io/cipher-clairvoyance/" rel="noopener noreferrer">https://ipusiron.github.io/cipher-clairvoyance/</a>です。</p>
+  </div>
   <header class="header">
     <div class="container">
       <div class="hero">
         <h1>🔮 Cipher Clairvoyance <span class="badge">Day044</span></h1>
         <p class="subtitle">暗号文を入力すると、使われた暗号方式を自動判定します</p>
       </div>
-      <button id="btnHelp" class="help-icon-btn" type="button" aria-label="ヘルプを開く">?</button>
+      <div class="header-actions">
+        <button id="btnTheme" class="help-icon-btn" type="button" aria-label="ダークモードに切り替える">🌙</button>
+        <button id="btnHelp" class="help-icon-btn" type="button" aria-label="ヘルプを開く">?</button>
+      </div>
     </div>
   </header>
 
@@ -32,7 +46,7 @@
       </div>
       <label for="cipherText" class="visually-hidden">暗号文</label>
       <textarea id="cipherText" rows="6" spellcheck="false" autocomplete="off"
-                placeholder="解析したい暗号文を入力してください（英字 A〜Z で書かれた暗号文が対象です）"
+                placeholder="解析したい暗号文を入力してください（英字A〜Zで書かれた暗号文が対象です）"
                 aria-describedby="inputCount"></textarea>
       <p id="inputCount" class="input-count"></p>
 
@@ -47,7 +61,7 @@
         <button id="btnAnalyze" class="btn primary large" type="button" disabled>🔍 解析開始</button>
         <button id="btnClear" class="btn" type="button" disabled>クリア</button>
       </div>
-      <p class="hint">Ctrl＋Enter（Mac は ⌘＋Enter）でも解析できます。</p>
+      <p class="hint">Ctrl＋Enter（Macは⌘＋Enter）でも解析できます。</p>
     </section>
 
     <!-- メイン結果 -->
@@ -55,7 +69,8 @@
       <h2 id="resultTitle">② 解析結果</h2>
       <p id="staleNote" class="stale-note hidden" role="status"></p>
 
-      <div id="resultLive" class="simple-result" aria-live="polite">
+      <p id="srStatus" class="visually-hidden" role="status"></p>
+      <div class="simple-result">
         <div class="winner-cipher">
           <div class="cipher-icon" aria-hidden="true">🏆</div>
           <div class="cipher-details">
@@ -95,7 +110,7 @@
 
         <div class="freq-chart-container">
           <h4>文字の出現頻度</h4>
-          <p class="help-text"><span class="legend legend-observed"></span>暗号文 <span class="legend legend-expected"></span>英語（学習用の英文での割合）</p>
+          <p class="help-text"><span class="legend legend-observed"></span>暗号文<span class="legend legend-expected"></span>英語（学習用の英文での割合）</p>
           <svg id="freqChart" class="freq-chart" viewBox="0 0 520 180" role="img" aria-label="文字の出現頻度のグラフ"></svg>
           <details class="data-table">
             <summary id="freqTableSummary">数値の表を見る</summary>
@@ -108,29 +123,20 @@
         <h3>周期性分析（ヴィジュネル暗号の鍵長）</h3>
         <div class="info-box info-box-blue">
           <h4>なぜ周期性を調べるのか</h4>
-          <p>
-            ヴィジュネル暗号はキーワードを繰り返して使うので、鍵の長さごとに同じずらし方が戻ってきます。
-            文字を鍵長ごとの列に分けると、各列は1つのシーザー暗号になり、一致指数（IC）が英文並みに上がります。
-          </p>
+          <p>ヴィジュネル暗号はキーワードを繰り返して使うので、鍵の長さごとに同じずらし方が戻ってきます。文字を鍵長ごとの列に分けると、各列は1つのシーザー暗号になり、一致指数（IC）が英文並みに上がります。</p>
         </div>
 
         <div class="period-analysis">
           <div class="analysis-item">
             <h4>周期ごとの一致指数（IC）</h4>
-            <p class="analysis-text">
-              周期 k ごとに文字を k 列に分け、列ごとの IC を平均した値です。点線は鍵長と見なす目安（0.058）です。
-              鍵長の倍数でも同じように高くなります。
-            </p>
+            <p class="analysis-text">周期kごとに文字をk列に分け、列ごとのICを平均した値です。点線は鍵長と見なす目安（0.058）です。鍵長の倍数でも同じように高くなります。</p>
             <svg id="periodChart" class="mini-chart" viewBox="0 0 400 120" role="img" aria-label="周期ごとの一致指数のグラフ"></svg>
             <p id="keyLengthInfo" class="analysis-note"></p>
           </div>
 
           <div class="analysis-item">
             <h4>カシスキー法（補助）</h4>
-            <p class="analysis-text">
-              同じ3文字の並びが繰り返し現れる間隔を調べ、その間隔を割り切る周期ごとに数えます。
-              ヴィジュネル暗号では、鍵長とその約数の棒が高くなる傾向があります。
-            </p>
+            <p class="analysis-text">同じ3文字の並びが繰り返し現れる間隔を調べ、その間隔を割り切る周期ごとに数えます。ヴィジュネル暗号では、鍵長とその約数の棒が高くなる傾向があります。</p>
             <svg id="kasiskiChart" class="mini-chart" viewBox="0 0 400 120" role="img" aria-label="カシスキー法の集計のグラフ"></svg>
             <p id="kasiskiInfo" class="analysis-note"></p>
           </div>
@@ -141,7 +147,7 @@
 
   <footer>
     <div class="footer">
-      🔗 GitHubリポジトリはこちら（ <a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank" rel="noopener noreferrer">ipusiron/cipher-clairvoyance</a> ）
+      🔗 GitHubリポジトリはこちら（<a href="https://github.com/ipusiron/cipher-clairvoyance" target="_blank" rel="noopener noreferrer">ipusiron/cipher-clairvoyance</a>）
     </div>
   </footer>
 
@@ -165,7 +171,7 @@
   <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-content help-modal-content">
       <div class="modal-header">
-        <h3 id="helpTitle">❓ Cipher Clairvoyance ヘルプ</h3>
+        <h3 id="helpTitle">❓ Cipher Clairvoyanceヘルプ</h3>
         <button id="helpModalClose" class="modal-close" type="button" aria-label="閉じる">&times;</button>
       </div>
       <div class="modal-body help-modal-body">
@@ -174,7 +180,7 @@
     </div>
   </div>
 
-  <!-- JavaScript モジュール -->
+  <!-- JavaScriptモジュール -->
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
