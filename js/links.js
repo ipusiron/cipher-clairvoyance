@@ -30,6 +30,7 @@ export const LINKS_BY_TYPE = {
   autokey: ['frequency', 'ic'],
   playfair: ['playfair'],
   bifid: ['frequency'],
+  hill: ['frequency'],
   transposition: ['columnar', 'railfence', 'grille']
 };
 

@@ -22,7 +22,7 @@ const OUT = path.join(ROOT, 'js', 'model.js');
 export const SEED = 20261002;
 export const N_TRAIN = 400;
 export const N_EVAL = 300;
-export const CLASSES = ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'autokey', 'playfair', 'bifid', 'transposition'];
+export const CLASSES = ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'autokey', 'playfair', 'bifid', 'hill', 'transposition'];
 // 長さ帯（英字の数）。maxGen は最後の帯で学習・評価に使う長さの上限
 export const BUCKETS = [
   { id: 'n20', min: 20, max: 49 },
@@ -31,8 +31,13 @@ export const BUCKETS = [
   { id: 'n200', min: 200, max: 399 },
   { id: 'n400', min: 400, max: null, maxGen: 1000 }
 ];
-export const VIGENERE_KEY = [2, 12];
-export const AUTOKEY_PRIMER = [3, 10];
+// 鍵や作り方の幅（実物の暗号文の揺れを学習と評価に混ぜる）
+export const VIGENERE_KEY = [2, 20];
+export const AUTOKEY_PRIMER = [1, 12];
+export const PLAYFAIR_PADS = ['X', 'Q', 'Z'];
+export const BIFID_PERIOD = [3, 15];
+export const COLUMNS = [3, 15];
+export const RAILS = [2, 10];
 const VAR_FLOOR_RATIO = 1e-3;
 
 function readCorpus(name) {
@@ -67,13 +72,30 @@ export function englishStats(text) {
   };
 }
 
-// 方式ごとの暗号化（鍵は毎回ランダム）。戻り値の key は評価の記録用
-function makers(rnd) {
+// 方式ごとの暗号化（鍵は毎回ランダム）。戻り値の keyLength は評価の記録用
+export function makers(rnd) {
   const ri = (n) => Math.floor(rnd() * n);
   const shuffled = (s) => {
     const a = [...s];
     for (let i = a.length - 1; i > 0; i--) { const j = ri(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
     return a;
+  };
+  const between = ([lo, hi]) => lo + ri(hi - lo + 1);
+  const randomKey = (n) => Array.from({ length: n }, () => C.ALPHABET[ri(26)]).join('');
+  const hillKey = () => {
+    for (;;) {
+      const k = [[ri(26), ri(26)], [ri(26), ri(26)]];
+      if (C.modInverse(C.determinant(k)) !== null) return k;
+    }
+  };
+  // 縦列転置: 埋字なし（半分）、X で埋める（4分の1）、ランダムな英字（ヌル）で埋める（4分の1）
+  const columnar = (s) => {
+    const n = between(COLUMNS);
+    const order = shuffled([...Array(n).keys()]);
+    const r = rnd();
+    let t = s;
+    if (r >= 0.5) while (t.length % n) t += r < 0.75 ? 'X' : C.ALPHABET[ri(26)];
+    return C.columnarEncrypt(t, order);
   };
   const blockPermute = (s) => {
     const size = [16, 25, 36, 49, 64][ri(5)];
@@ -91,29 +113,30 @@ function makers(rnd) {
     affine: (s) => ({ c: C.affineEncrypt(s, C.AFFINE_A[1 + ri(C.AFFINE_A.length - 1)], ri(26)) }),
     substitution: (s) => ({ c: C.substitutionEncrypt(s, shuffled(C.ALPHABET).join('')) }),
     vigenere: (s) => {
-      const k = VIGENERE_KEY[0] + ri(VIGENERE_KEY[1] - VIGENERE_KEY[0] + 1);
-      return { c: C.vigenereEncrypt(s, Array.from({ length: k }, () => C.ALPHABET[ri(26)]).join('')), keyLength: k };
+      const k = between(VIGENERE_KEY);
+      return { c: C.vigenereEncrypt(s, randomKey(k)), keyLength: k };
     },
-    autokey: (s) => {
-      const k = AUTOKEY_PRIMER[0] + ri(AUTOKEY_PRIMER[1] - AUTOKEY_PRIMER[0] + 1);
-      return { c: C.autokeyEncrypt(s, Array.from({ length: k }, () => C.ALPHABET[ri(26)]).join('')) };
+    autokey: (s) => ({ c: C.autokeyEncrypt(s, randomKey(between(AUTOKEY_PRIMER))) }),
+    playfair: (s) => {
+      const pad = PLAYFAIR_PADS[ri(PLAYFAIR_PADS.length)];
+      return { c: C.playfairEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join(''), pad, pad === 'X' ? 'Q' : 'X') };
     },
-    playfair: (s) => ({ c: C.playfairEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join('')) }),
-    bifid: (s) => ({ c: C.bifidEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join(''), rnd() < 0.5 ? null : 5 + ri(6)) }),
+    bifid: (s) => ({ c: C.bifidEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join(''), rnd() < 0.5 ? null : between(BIFID_PERIOD)) }),
+    hill: (s) => ({ c: C.hillEncrypt(s, hillKey()) }),
     transposition: (s) => {
       const r = ri(3);
-      if (r === 0) return { c: C.columnarEncrypt(s, shuffled([...Array(3 + ri(8)).keys()])) };
-      if (r === 1) return { c: C.railFenceEncrypt(s, 2 + ri(5)) };
+      if (r === 0) return { c: columnar(s) };
+      if (r === 1) return { c: C.railFenceEncrypt(s, between(RAILS)) };
       return { c: blockPermute(s) };
     }
   };
 }
 
-// 長さ帯の中の長さで英文を切り出して暗号化する。暗号文が長くなる方式（プレイフェアの埋字）は目標の長さで切る
-function sample(text, type, bucket, rnd, make) {
+// 長さ帯の中の長さで英文を切り出して暗号化する。暗号文が長くなる方式（プレイフェアの埋字など）は目標の長さで切る
+export function sample(text, type, bucket, rnd, make) {
   const hi = bucket.max ?? bucket.maxGen;
   let len = bucket.min + Math.floor(rnd() * (hi - bucket.min + 1));
-  if (type === 'playfair') len -= len % 2;
+  if (type === 'playfair' || type === 'hill') len -= len % 2;
   if (len < bucket.min) len += 2;
   const start = Math.floor(rnd() * (text.length - len - 1));
   const m = make[type](text.slice(start, start + len));

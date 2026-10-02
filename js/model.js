@@ -3,7 +3,7 @@
 // 評価: Project Gutenberg #98 A Tale of Two Cities（Charles Dickens）の抜粋 tools/corpus/eval-pg98.txt
 // どちらも米国でパブリックドメイン。抜粋の作り方は tools/make-corpus.mjs。
 // 乱数の種 20261002、学習は長さ帯×方式ごとに 400 件、評価は 300 件。
-// 接戦の目安 CLOSE_MARGIN=3、鍵長の閾値 KEY_IC_THRESHOLD=0.058（周期の確認は 200 字以上）、ヴィジュネルの鍵長 2〜12、オートキーのプライマー 3〜10 字、ヴィジュネル／オートキーの2段目は 50 字以上。
+// 接戦の目安 CLOSE_MARGIN=3、鍵長の閾値 KEY_IC_THRESHOLD=0.058（周期の確認は 200 字以上）、ヴィジュネルの鍵長 2〜20、オートキーのプライマー 1〜12 字、ヴィジュネル／オートキーの2段目は 50 字以上。
 
 export const MODEL = {
   version: 1,
@@ -75,7 +75,7 @@ export const MODEL = {
     { id: 'n200', min: 200, max: 399 },
     { id: 'n400', min: 400, max: null }
   ],
-  classes: ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'autokey', 'playfair', 'bifid', 'transposition'],
+  classes: ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'autokey', 'playfair', 'bifid', 'hill', 'transposition'],
   features: ['ic', 'chiEnglish', 'chiShift', 'chiAffine', 'periodicGain', 'bigram', 'doubledPairs', 'distinct', 'evenLength', 'hasJ'],
   params: {
     n20: {
@@ -96,176 +96,196 @@ export const MODEL = {
         var: [0.000142403, 49.2421, 0.314745, 0.0715072, 0.000681065, 0.0857826, 0.00165069, 4.77949, 0, 0]
       },
       vigenere: {
-        mean: [0.0411763, 8.61884, 2.09041, 1.28308, 0.0338192, -3.72997, 0.0399218, 18.3775, 0.452736, 0.716418],
-        var: [0.000110511, 32.0718, 0.347446, 0.0772451, 0.000542056, 0.0710484, 0.00276464, 8.25499, 0, 0]
+        mean: [0.0413791, 8.70124, 2.10395, 1.26529, 0.0325743, -3.73532, 0.0335519, 18.4725, 0.512438, 0.741294],
+        var: [0.000108009, 29.7864, 0.353903, 0.0815237, 0.000451635, 0.074007, 0.00197064, 8.76424, 0, 0]
       },
       autokey: {
-        mean: [0.0406054, 6.73405, 2.1861, 1.29987, 0.0268759, -3.66451, 0.0426394, 18.4625, 0.534826, 0.656716],
-        var: [0.000105734, 16.6816, 0.312557, 0.0781024, 0.000339724, 0.0603905, 0.00271123, 8.67859, 0, 0]
+        mean: [0.0403187, 7.42169, 2.19096, 1.30665, 0.0263737, -3.70246, 0.0422181, 18.6725, 0.460199, 0.624378],
+        var: [0.0000923771, 26.689, 0.293216, 0.0819065, 0.000328323, 0.0764751, 0.00244627, 8.00024, 0, 0]
       },
       playfair: {
-        mean: [0.0476302, 7.83817, 2.16534, 1.24752, 0.0354785, -3.65967, 0, 17.27, 0.997512, 0.00248756],
-        var: [0.000154483, 29.4506, 0.373186, 0.066631, 0.000588311, 0.0881988, 0.00000239957, 7.1421, 0, 0]
+        mean: [0.0480601, 7.26307, 2.19691, 1.25851, 0.0353586, -3.62082, 0, 17.1775, 0.997512, 0.00248756],
+        var: [0.000123806, 27.3177, 0.394536, 0.0693887, 0.00053855, 0.082276, 0.00000223194, 7.30599, 0, 0]
       },
       bifid: {
-        mean: [0.0442389, 5.7904, 2.15325, 1.24667, 0.0288687, -3.4972, 0.0436296, 17.8275, 0.512438, 0.00248756],
-        var: [0.000122356, 20.0405, 0.386661, 0.0727571, 0.000416838, 0.0714444, 0.00292007, 7.17774, 0, 0]
+        mean: [0.0442509, 5.95575, 2.11706, 1.27463, 0.0302718, -3.51707, 0.042009, 17.855, 0.495025, 0.00248756],
+        var: [0.0000986128, 18.4449, 0.372246, 0.0739695, 0.000331084, 0.0719214, 0.0023253, 6.93397, 0, 0]
+      },
+      hill: {
+        mean: [0.041596, 8.67445, 2.19332, 1.26146, 0.0322261, -3.71608, 0.0440675, 18.25, 0.997512, 0.671642],
+        var: [0.000104162, 39.549, 0.366766, 0.0761138, 0.000479407, 0.0770041, 0.0025848, 7.8625, 0, 0]
       },
       transposition: {
-        mean: [0.0620638, 0.734986, 0.728879, 0.6915, 0.0334687, -2.78408, 0.0596784, 15.1425, 0.475124, 0.0472637],
-        var: [0.000197794, 0.166964, 0.152556, 0.0954752, 0.000513811, 0.0247797, 0.0035401, 5.07719, 0, 0]
+        mean: [0.0612292, 1.57718, 0.847539, 0.740921, 0.034063, -2.82159, 0.0563233, 15.45, 0.462687, 0.0497512],
+        var: [0.000210111, 16.7112, 0.357486, 0.129882, 0.000606311, 0.0420389, 0.00345763, 4.7525, 0, 0]
       }
     },
     n50: {
       plain: {
-        mean: [0.0629822, 0.34172, 0.34172, 0.339271, 0.0353388, -2.34439, 0.0327057, 19.4225, 0.559701, 0.109453],
-        var: [0.0000589774, 0.0341507, 0.0341507, 0.0277198, 0.000278916, 0.00405907, 0.000853759, 2.70899, 0, 0]
+        mean: [0.0629974, 0.329342, 0.329342, 0.329008, 0.0375792, -2.34333, 0.0339132, 19.4575, 0.50995, 0.144279],
+        var: [0.0000573338, 0.0240113, 0.0234223, 0.0227439, 0.000343953, 0.00449929, 0.00104803, 2.41819, 0, 0]
       },
       caesar: {
-        mean: [0.0633582, 9.34347, 0.311546, 0.311263, 0.0344248, -3.76446, 0.033287, 19.5475, 0.512438, 0.766169],
-        var: [0.0000643544, 35.4323, 0.0224622, 0.0220671, 0.000325774, 0.0537671, 0.000855685, 2.45274, 0, 0]
+        mean: [0.0632277, 9.18698, 0.32129, 0.321083, 0.0359551, -3.76206, 0.0351939, 19.3525, 0.467662, 0.80597],
+        var: [0.0000585406, 29.6236, 0.0209101, 0.020488, 0.00028742, 0.0533306, 0.00100048, 2.65824, 0, 0]
       },
       affine: {
-        mean: [0.0633885, 9.25062, 2.04011, 0.320764, 0.0356584, -3.74657, 0.0326178, 19.4825, 0.485075, 0.726368],
-        var: [0.0000555185, 29.2405, 0.308603, 0.0245589, 0.000277015, 0.072061, 0.000971859, 2.43469, 0, 0]
+        mean: [0.0635179, 9.59216, 2.02338, 0.317054, 0.0368422, -3.75958, 0.0315824, 19.3875, 0.5, 0.721393],
+        var: [0.0000670253, 37.2401, 0.29416, 0.0168799, 0.000295113, 0.0791838, 0.000858835, 2.54234, 0, 0]
       },
       substitution: {
-        mean: [0.0632916, 9.03243, 2.00455, 1.17978, 0.037368, -3.73778, 0.0333409, 19.5225, 0.495025, 0.723881],
-        var: [0.0000602839, 31.0351, 0.327551, 0.0469678, 0.000355959, 0.075529, 0.000865562, 2.56449, 0, 0]
+        mean: [0.0634629, 9.10676, 2.01876, 1.18127, 0.0366661, -3.72209, 0.0342796, 19.455, 0.502488, 0.728856],
+        var: [0.0000581166, 31.0356, 0.327348, 0.0591878, 0.000268031, 0.0649468, 0.000815734, 2.53298, 0, 0]
       },
       vigenere: {
-        mean: [0.0428513, 6.42607, 1.98871, 1.28802, 0.0370351, -3.74062, 0.0385174, 23.53, 0.512438, 0.910448],
-        var: [0.0000350346, 9.8088, 0.275959, 0.0637194, 0.000332688, 0.0405976, 0.00102506, 2.6791, 0, 0]
+        mean: [0.0420725, 6.38666, 2.06118, 1.34578, 0.0350337, -3.74118, 0.0374953, 23.805, 0.487562, 0.890547],
+        var: [0.0000382748, 9.80015, 0.30275, 0.0779181, 0.000270361, 0.0352257, 0.00105285, 2.44697, 0, 0]
       },
       autokey: {
-        mean: [0.040023, 5.01097, 2.1149, 1.38528, 0.0258632, -3.67679, 0.036218, 24.085, 0.487562, 0.880597],
-        var: [0.0000190862, 5.99613, 0.227926, 0.0760631, 0.000139588, 0.0330872, 0.000973312, 2.12777, 0, 0]
+        mean: [0.0398735, 4.95328, 2.13376, 1.37439, 0.0258313, -3.67993, 0.0404214, 24.0775, 0.495025, 0.878109],
+        var: [0.0000228736, 5.13368, 0.240696, 0.0822389, 0.000154339, 0.03109, 0.000969209, 2.21649, 0, 0]
       },
       playfair: {
-        mean: [0.0487168, 5.65043, 2.03842, 1.24605, 0.0310076, -3.63582, 0, 22.1825, 0.997512, 0.00248756],
-        var: [0.0000375311, 10.9897, 0.30923, 0.0573704, 0.000248137, 0.0514794, 0.00000116125, 2.34919, 0, 0]
+        mean: [0.0484213, 5.77097, 2.05048, 1.25884, 0.0335786, -3.63183, 0, 22.1975, 0.997512, 0.00248756],
+        var: [0.0000411192, 12.1632, 0.287655, 0.0698875, 0.000256419, 0.0546964, 0.0000012541, 2.54349, 0, 0]
       },
       bifid: {
-        mean: [0.044987, 4.21205, 1.99298, 1.2953, 0.028609, -3.50003, 0.0413987, 22.7575, 0.514925, 0.00248756],
-        var: [0.0000353648, 6.69192, 0.257588, 0.0648089, 0.000185382, 0.0389158, 0.00132946, 2.42869, 0, 0]
+        mean: [0.0447572, 4.14594, 2.01968, 1.30299, 0.0280427, -3.49285, 0.0400142, 22.7925, 0.534826, 0.00248756],
+        var: [0.0000393488, 5.70394, 0.246477, 0.0646316, 0.000171714, 0.0348713, 0.00119919, 2.62444, 0, 0]
+      },
+      hill: {
+        mean: [0.042056, 5.97867, 2.06772, 1.32658, 0.0312027, -3.68914, 0.0461972, 23.76, 0.997512, 0.875622],
+        var: [0.0000330612, 9.77814, 0.237683, 0.0708647, 0.000249809, 0.0412639, 0.00170454, 2.7474, 0, 0]
       },
       transposition: {
-        mean: [0.0634726, 0.328673, 0.328673, 0.328585, 0.03069, -2.78364, 0.0595792, 19.35, 0.472637, 0.136816],
-        var: [0.0000585805, 0.0251887, 0.0249392, 0.0247952, 0.000178062, 0.0101841, 0.00168194, 2.4375, 0, 0]
+        mean: [0.0627759, 0.408698, 0.375838, 0.36797, 0.0318133, -2.80027, 0.0626898, 19.4875, 0.492537, 0.161692],
+        var: [0.0000535028, 0.458415, 0.0710986, 0.0513038, 0.000248706, 0.0136277, 0.00171471, 2.41984, 0, 0]
       }
     },
     n100: {
       plain: {
-        mean: [0.0643052, 0.173348, 0.173348, 0.173348, 0.0188934, -2.34363, 0.0330331, 21.755, 0.4801, 0.211443],
-        var: [0.0000319965, 0.0197281, 0.00586306, 0.00586306, 0.0000756813, 0.0022897, 0.000444211, 1.60498, 0, 0]
+        mean: [0.0647229, 0.173036, 0.173036, 0.172402, 0.0197689, -2.33974, 0.034056, 21.6975, 0.527363, 0.231343],
+        var: [0.0000265673, 0.0193046, 0.00961959, 0.00805507, 0.0000965775, 0.00197669, 0.000556466, 1.54099, 0, 0]
       },
       caesar: {
-        mean: [0.0646867, 8.5153, 0.159833, 0.159833, 0.0188251, -3.77639, 0.0328597, 21.7375, 0.477612, 0.853234],
-        var: [0.0000275545, 20.7267, 0.00494092, 0.00494092, 0.0000798248, 0.045224, 0.000415682, 1.67859, 0, 0]
+        mean: [0.0643903, 8.95587, 0.164534, 0.164534, 0.0198649, -3.79052, 0.0318646, 21.7425, 0.507463, 0.855721],
+        var: [0.0000239866, 22.7889, 0.00464684, 0.00464684, 0.0000897437, 0.0458736, 0.000507721, 1.63619, 0, 0]
       },
       affine: {
-        mean: [0.0641512, 8.47802, 1.99932, 0.159988, 0.0195049, -3.72792, 0.0329292, 21.84, 0.5199, 0.820896],
-        var: [0.0000259686, 24.2005, 0.290654, 0.00396825, 0.0000978015, 0.0653553, 0.000506709, 1.4644, 0, 0]
+        mean: [0.0640744, 8.26167, 2.04611, 0.169296, 0.019604, -3.71419, 0.0322589, 21.735, 0.504975, 0.843284],
+        var: [0.0000271673, 26.4924, 0.262393, 0.00547589, 0.0000949285, 0.07392, 0.0004676, 1.53977, 0, 0]
       },
       substitution: {
-        mean: [0.064239, 8.53906, 1.95651, 1.14778, 0.0188871, -3.73525, 0.0322954, 21.6925, 0.50995, 0.818408],
-        var: [0.00002943, 24.6463, 0.296749, 0.0574949, 0.0000717942, 0.0557753, 0.000447707, 1.56294, 0, 0]
+        mean: [0.0648849, 8.6579, 1.96535, 1.1479, 0.0201113, -3.73106, 0.0343616, 21.755, 0.475124, 0.81592],
+        var: [0.0000235843, 29.6151, 0.316379, 0.0564981, 0.0000962282, 0.0571477, 0.000502439, 1.64998, 0, 0]
       },
       vigenere: {
-        mean: [0.0435021, 5.49868, 2.05878, 1.4791, 0.0283137, -3.72014, 0.0397596, 25.4175, 0.507463, 0.975124],
-        var: [0.0000266563, 6.11894, 0.335802, 0.103421, 0.000102552, 0.0239812, 0.000595955, 0.848194, 0, 0]
+        mean: [0.041969, 5.44842, 2.11732, 1.53817, 0.0267609, -3.73682, 0.0389319, 25.6425, 0.442786, 0.992537],
+        var: [0.0000214034, 5.05985, 0.303549, 0.112835, 0.000100305, 0.0218448, 0.000606117, 0.499694, 0, 0]
       },
       autokey: {
-        mean: [0.0401274, 3.92387, 2.29896, 1.63177, 0.0134599, -3.66539, 0.0389763, 25.8025, 0.50995, 0.972637],
-        var: [0.0000052713, 1.81708, 0.20859, 0.0850582, 0.0000488313, 0.0153167, 0.000544744, 0.198494, 0, 0]
+        mean: [0.040358, 4.06772, 2.24602, 1.65834, 0.0134102, -3.68744, 0.0411683, 25.7825, 0.440299, 0.985075],
+        var: [0.00000928361, 1.93208, 0.165219, 0.0809572, 0.0000419134, 0.0166343, 0.000567456, 0.215194, 0, 0]
       },
       playfair: {
-        mean: [0.0494246, 5.37007, 2.08323, 1.32066, 0.0170104, -3.64946, 0, 24.195, 0.997512, 0.00248756],
-        var: [0.0000199528, 8.88535, 0.270866, 0.0546004, 0.0000607268, 0.0383354, 7.2354e-7, 0.806975, 0, 0]
+        mean: [0.0496926, 5.51308, 2.0388, 1.302, 0.0168488, -3.656, 0, 24.1675, 0.997512, 0.00248756],
+        var: [0.0000199202, 10.3513, 0.239484, 0.0674485, 0.0000621068, 0.040655, 7.53956e-7, 0.784444, 0, 0]
       },
       bifid: {
-        mean: [0.0450271, 3.43035, 2.09849, 1.42159, 0.0152551, -3.49279, 0.0415309, 24.5975, 0.470149, 0.00248756],
-        var: [0.0000182138, 3.63147, 0.26552, 0.0884012, 0.0000456854, 0.024757, 0.000646576, 0.485494, 0, 0]
+        mean: [0.0455616, 3.5391, 2.06197, 1.40444, 0.0145898, -3.49023, 0.0407392, 24.575, 0.472637, 0.00248756],
+        var: [0.0000184509, 3.09241, 0.234809, 0.0780608, 0.0000419485, 0.0239562, 0.000557376, 0.504375, 0, 0]
+      },
+      hill: {
+        mean: [0.0419357, 5.12895, 2.21851, 1.52243, 0.0173955, -3.69661, 0.0435048, 25.655, 0.997512, 0.992537],
+        var: [0.0000123207, 4.36248, 0.201204, 0.100217, 0.0000805834, 0.0218166, 0.000924892, 0.470975, 0, 0]
       },
       transposition: {
-        mean: [0.0642467, 0.170607, 0.170607, 0.170607, 0.017245, -2.78836, 0.061173, 21.7, 0.529851, 0.236318],
-        var: [0.0000266506, 0.0197281, 0.00448986, 0.00448986, 0.0000683594, 0.00603803, 0.000899742, 1.8, 0, 0]
+        mean: [0.0641039, 0.23756, 0.218434, 0.204326, 0.0173097, -2.79234, 0.0606549, 21.8675, 0.537313, 0.256219],
+        var: [0.0000244361, 0.209286, 0.0716183, 0.0318397, 0.0000936218, 0.00699789, 0.000794587, 1.85994, 0, 0]
       }
     },
     n200: {
       plain: {
-        mean: [0.0651147, 0.0883367, 0.0883367, 0.0883367, 0.00889459, -2.34027, 0.0338573, 23.215, 0.504975, 0.38806],
-        var: [0.0000141714, 0.0167274, 0.00142852, 0.00142852, 0.0000179865, 0.00131099, 0.000228735, 1.44377, 0, 0]
+        mean: [0.065241, 0.0859175, 0.0859175, 0.0859175, 0.0089868, -2.33921, 0.032317, 23.21, 0.4801, 0.40796],
+        var: [0.0000126112, 0.0153616, 0.00112671, 0.00112671, 0.0000178008, 0.0011011, 0.000241678, 1.2509, 0, 0]
       },
       caesar: {
-        mean: [0.0647986, 8.22927, 0.0867509, 0.0867509, 0.00892578, -3.7647, 0.0346547, 23.0725, 0.495025, 0.90796],
-        var: [0.0000136169, 18.3976, 0.00137512, 0.00137512, 0.0000140002, 0.0395373, 0.000199869, 1.36724, 0, 0]
+        mean: [0.0649797, 8.1535, 0.0869333, 0.0869333, 0.00877495, -3.7621, 0.0326376, 23.205, 0.517413, 0.91791],
+        var: [0.0000135064, 16.5756, 0.00110424, 0.00108905, 0.0000166323, 0.0409582, 0.000217431, 1.31797, 0, 0]
       },
       affine: {
-        mean: [0.0646041, 8.11025, 1.98162, 0.0897129, 0.0090652, -3.72392, 0.0338892, 23.0875, 0.502488, 0.868159],
-        var: [0.0000134378, 19.1393, 0.254449, 0.00160882, 0.0000182263, 0.0565995, 0.000254803, 1.31484, 0, 0]
+        mean: [0.0647653, 7.83851, 1.9721, 0.0840625, 0.00915999, -3.73013, 0.0339653, 23.1975, 0.495025, 0.88806],
+        var: [0.0000130813, 16.5408, 0.246122, 0.000940116, 0.000020025, 0.0591715, 0.000243092, 1.35849, 0, 0]
       },
       substitution: {
-        mean: [0.0650552, 7.92771, 1.94511, 1.1114, 0.00885038, -3.74013, 0.0340125, 23.2125, 0.5, 0.885572],
-        var: [0.0000108631, 18.9155, 0.28752, 0.0516336, 0.0000160181, 0.0535003, 0.00024988, 1.38234, 0, 0]
+        mean: [0.0651186, 8.05729, 1.92009, 1.1135, 0.00903559, -3.73244, 0.0340098, 23.2425, 0.472637, 0.883085],
+        var: [0.0000126566, 24.784, 0.288616, 0.0508792, 0.0000165509, 0.0550396, 0.000234088, 1.27869, 0, 0]
       },
       vigenere: {
-        mean: [0.04369, 5.20083, 2.13194, 1.61464, 0.0243678, -3.74022, 0.0367232, 25.885, 0.485075, 0.995025],
-        var: [0.0000174888, 4.26255, 0.327656, 0.139514, 0.0000318605, 0.0193651, 0.000274169, 0.141775, 0, 0]
+        mean: [0.0423255, 5.16269, 2.25679, 1.72374, 0.0243599, -3.73477, 0.0376704, 25.9, 0.475124, 0.992537],
+        var: [0.0000151172, 3.51177, 0.315289, 0.151838, 0.0000353091, 0.014482, 0.0002829, 0.125, 0, 0]
       },
       autokey: {
-        mean: [0.0397557, 3.53291, 2.47595, 1.96919, 0.0060748, -3.66804, 0.0404203, 25.9925, 0.457711, 0.997512],
-        var: [0.00000171693, 0.749726, 0.153, 0.0689602, 0.00000773608, 0.00714619, 0.000306505, 0.00744375, 0, 0]
+        mean: [0.0403762, 3.56331, 2.40704, 1.91984, 0.00639671, -3.66953, 0.0401808, 25.99, 0.507463, 0.997512],
+        var: [0.00000485905, 0.89566, 0.166105, 0.0817777, 0.00000921466, 0.00799569, 0.000292727, 0.0099, 0, 0]
       },
       playfair: {
-        mean: [0.0499664, 4.91457, 2.12257, 1.36313, 0.00852757, -3.63108, 0, 24.8475, 0.997512, 0.00248756],
-        var: [0.0000131858, 6.2868, 0.253381, 0.0612253, 0.0000127184, 0.0295953, 4.561e-7, 0.139244, 0, 0]
+        mean: [0.049869, 5.18107, 2.09078, 1.36754, 0.00844435, -3.65745, 0, 24.8675, 0.997512, 0.00248756],
+        var: [0.0000113034, 7.14203, 0.245595, 0.0549275, 0.0000154285, 0.0376294, 4.86868e-7, 0.134944, 0, 0]
       },
       bifid: {
-        mean: [0.0453982, 3.24102, 2.16523, 1.57059, 0.00808664, -3.50057, 0.0415418, 24.9525, 0.440299, 0.00248756],
-        var: [0.0000107588, 2.03854, 0.247613, 0.105112, 0.000017057, 0.0176245, 0.000301384, 0.0502438, 0, 0]
+        mean: [0.0458367, 3.15961, 2.12854, 1.5409, 0.00774837, -3.48708, 0.041216, 24.945, 0.524876, 0.00248756],
+        var: [0.0000143011, 1.95929, 0.274448, 0.0924185, 0.0000140707, 0.021617, 0.000296657, 0.056975, 0, 0]
+      },
+      hill: {
+        mean: [0.0417975, 4.85242, 2.41598, 1.75193, 0.00991517, -3.70194, 0.0436854, 25.97, 0.997512, 0.997512],
+        var: [0.00000839643, 2.6603, 0.183779, 0.143893, 0.0000209976, 0.0146865, 0.000604317, 0.0291, 0, 0]
       },
       transposition: {
-        mean: [0.0651199, 0.0848102, 0.0848102, 0.0848102, 0.00795491, -2.78217, 0.0596355, 23.12, 0.4801, 0.370647],
-        var: [0.0000135577, 0.0167274, 0.00112365, 0.00100219, 0.0000138057, 0.00307992, 0.000378871, 1.3156, 0, 0]
+        mean: [0.0646662, 0.103666, 0.10365, 0.102383, 0.00793362, -2.78851, 0.0594007, 23.2525, 0.5199, 0.415423],
+        var: [0.0000128881, 0.0180962, 0.0180351, 0.0139604, 0.0000146227, 0.00322422, 0.000475099, 1.47374, 0, 0]
       }
     },
     n400: {
       plain: {
-        mean: [0.0651574, 0.0413637, 0.0413637, 0.0413637, 0.00379615, -2.34108, 0.0343563, 24.5975, 0.5199, 0.676617],
-        var: [0.00000589349, 0.0173974, 0.0011923, 0.000778474, 0.0000035188, 0.000577695, 0.000136242, 1.14549, 0, 0]
+        mean: [0.0650867, 0.0425023, 0.0425023, 0.0425023, 0.00373633, -2.34229, 0.0339748, 24.4025, 0.5, 0.587065],
+        var: [0.00000614692, 0.0149477, 0.00123931, 0.000841613, 0.00000362328, 0.00052862, 0.000118892, 1.07049, 0, 0]
       },
       caesar: {
-        mean: [0.0650077, 8.03056, 0.0435774, 0.0435774, 0.00371144, -3.77141, 0.0335689, 24.5325, 0.524876, 0.957711],
-        var: [0.00000608647, 14.8873, 0.0011923, 0.000778474, 0.00000366133, 0.0339899, 0.000121067, 1.22894, 0, 0]
+        mean: [0.0650918, 8.2826, 0.039904, 0.039904, 0.00359965, -3.78247, 0.0338116, 24.565, 0.5, 0.950249],
+        var: [0.0000061235, 16.0823, 0.00123931, 0.000841613, 0.00000321348, 0.0341796, 0.000113909, 1.22577, 0, 0]
       },
       affine: {
-        mean: [0.0651698, 8.32316, 1.91665, 0.041525, 0.00379524, -3.73295, 0.0329959, 24.5575, 0.5, 0.927861],
-        var: [0.00000586471, 24.3214, 0.261232, 0.000778474, 0.00000363614, 0.0616392, 0.0000891331, 1.13169, 0, 0]
+        mean: [0.064967, 7.9893, 1.93868, 0.0419673, 0.0036465, -3.72931, 0.0336986, 24.65, 0.524876, 0.937811],
+        var: [0.00000579036, 19.1658, 0.231954, 0.000841613, 0.0000034138, 0.0598464, 0.000109482, 1.1375, 0, 0]
       },
       substitution: {
-        mean: [0.0652254, 8.26995, 1.86236, 1.12848, 0.00383988, -3.76087, 0.0335578, 24.545, 0.524876, 0.920398],
-        var: [0.00000613747, 21.9482, 0.206565, 0.0488555, 0.00000374579, 0.0502335, 0.000103201, 1.24797, 0, 0]
+        mean: [0.0649749, 7.80119, 1.92924, 1.14317, 0.00389448, -3.72211, 0.0339382, 24.5275, 0.504975, 0.935323],
+        var: [0.00000641044, 20.7177, 0.33023, 0.04692, 0.00000410478, 0.0586933, 0.000127085, 1.10424, 0, 0]
       },
       vigenere: {
-        mean: [0.0437146, 4.97492, 2.17925, 1.76461, 0.0229784, -3.72757, 0.0374803, 25.955, 0.457711, 0.997512],
-        var: [0.0000144726, 3.10378, 0.346851, 0.178016, 0.0000192396, 0.0148272, 0.000148446, 0.042975, 0, 0]
+        mean: [0.042305, 4.83239, 2.37616, 1.93939, 0.0238973, -3.7322, 0.0387563, 25.9625, 0.482587, 0.997512],
+        var: [0.0000118623, 2.39303, 0.325103, 0.192196, 0.0000156044, 0.0104017, 0.000163108, 0.0460937, 0, 0]
       },
       autokey: {
-        mean: [0.0397503, 3.36412, 2.61682, 2.30795, 0.00257717, -3.67324, 0.0396455, 26, 0.50995, 0.997512],
-        var: [5.87074e-7, 0.366914, 0.104038, 0.0661019, 0.00000196849, 0.00368763, 0.000118669, 0.000995177, 0, 0]
+        mean: [0.0401089, 3.41578, 2.59909, 2.24436, 0.0027103, -3.67711, 0.0396304, 26, 0.50995, 0.997512],
+        var: [0.00000257255, 0.391156, 0.118113, 0.0851064, 0.00000220068, 0.00369896, 0.000110068, 0.000968861, 0, 0]
       },
       playfair: {
-        mean: [0.0500057, 4.89379, 2.15406, 1.40416, 0.00426943, -3.65185, 0, 24.98, 0.997512, 0.00248756],
-        var: [0.00000803215, 5.81342, 0.200022, 0.0616683, 0.00000327636, 0.0271869, 3.22528e-7, 0.0246, 0, 0]
+        mean: [0.0499453, 4.92131, 2.15304, 1.42299, 0.00430929, -3.64926, 0, 24.99, 0.997512, 0.00248756],
+        var: [0.00000783831, 6.61403, 0.237426, 0.0634385, 0.00000313703, 0.0316689, 3.64828e-7, 0.0149, 0, 0]
       },
       bifid: {
-        mean: [0.0455533, 3.07783, 2.23517, 1.65601, 0.00467797, -3.49986, 0.0406371, 24.9975, 0.497512, 0.00248756],
-        var: [0.00000885188, 1.42019, 0.271924, 0.109949, 0.0000108804, 0.0137415, 0.000118398, 0.00249375, 0, 0]
+        mean: [0.0453056, 3.02907, 2.21038, 1.67979, 0.00456795, -3.49969, 0.0418859, 25, 0.460199, 0.00248756],
+        var: [0.00000807999, 1.48211, 0.26667, 0.107939, 0.00000968067, 0.0132313, 0.000156896, 0.000968861, 0, 0]
+      },
+      hill: {
+        mean: [0.0416821, 4.46388, 2.56565, 2.00125, 0.00599914, -3.69819, 0.0431045, 26, 0.997512, 0.997512],
+        var: [0.000005982, 1.89917, 0.168139, 0.189649, 0.00000781875, 0.0120151, 0.000515033, 0.000968861, 0, 0]
       },
       transposition: {
-        mean: [0.0650873, 0.0415541, 0.0415541, 0.0415541, 0.00343161, -2.7825, 0.0588822, 24.56, 0.447761, 0.664179],
-        var: [0.00000595037, 0.0173974, 0.0011923, 0.000778474, 0.00000317208, 0.00149392, 0.000205833, 1.2514, 0, 0]
+        mean: [0.0650686, 0.0441326, 0.0441326, 0.0441326, 0.00348019, -2.78182, 0.0607492, 24.565, 0.504975, 0.656716],
+        var: [0.00000567624, 0.0149477, 0.00123931, 0.000841613, 0.00000321737, 0.0015996, 0.000200974, 1.12578, 0, 0]
       }
     }
   },
@@ -273,87 +293,92 @@ export const MODEL = {
     n20: {
       perClass: 300,
       confusion: {
-        plain: { plain: 283, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 1, bifid: 1, transposition: 14 },
-        caesar: { plain: 0, caesar: 261, affine: 4, substitution: 15, vigenere: 2, autokey: 1, playfair: 15, bifid: 1, transposition: 1 },
-        affine: { plain: 0, caesar: 8, affine: 225, substitution: 28, vigenere: 7, autokey: 3, playfair: 21, bifid: 7, transposition: 1 },
-        substitution: { plain: 0, caesar: 10, affine: 24, substitution: 175, vigenere: 12, autokey: 18, playfair: 34, bifid: 24, transposition: 3 },
-        vigenere: { plain: 0, caesar: 9, affine: 5, substitution: 33, vigenere: 86, autokey: 100, playfair: 26, bifid: 41, transposition: 0 },
-        autokey: { plain: 0, caesar: 8, affine: 7, substitution: 17, vigenere: 36, autokey: 140, playfair: 34, bifid: 57, transposition: 1 },
-        playfair: { plain: 0, caesar: 0, affine: 2, substitution: 1, vigenere: 0, autokey: 0, playfair: 294, bifid: 0, transposition: 3 },
-        bifid: { plain: 0, caesar: 3, affine: 6, substitution: 14, vigenere: 9, autokey: 16, playfair: 67, bifid: 176, transposition: 9 },
-        transposition: { plain: 18, caesar: 0, affine: 1, substitution: 3, vigenere: 0, autokey: 0, playfair: 7, bifid: 4, transposition: 267 }
+        plain: { plain: 287, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 1, bifid: 0, hill: 0, transposition: 12 },
+        caesar: { plain: 0, caesar: 253, affine: 0, substitution: 16, vigenere: 4, autokey: 1, playfair: 15, bifid: 2, hill: 2, transposition: 7 },
+        affine: { plain: 0, caesar: 11, affine: 210, substitution: 28, vigenere: 2, autokey: 4, playfair: 24, bifid: 6, hill: 7, transposition: 8 },
+        substitution: { plain: 0, caesar: 4, affine: 31, substitution: 150, vigenere: 9, autokey: 12, playfair: 34, bifid: 32, hill: 25, transposition: 3 },
+        vigenere: { plain: 0, caesar: 5, affine: 4, substitution: 30, vigenere: 40, autokey: 71, playfair: 27, bifid: 37, hill: 80, transposition: 6 },
+        autokey: { plain: 0, caesar: 3, affine: 7, substitution: 15, vigenere: 32, autokey: 72, playfair: 29, bifid: 64, hill: 77, transposition: 1 },
+        playfair: { plain: 0, caesar: 0, affine: 2, substitution: 3, vigenere: 0, autokey: 0, playfair: 294, bifid: 0, hill: 0, transposition: 1 },
+        bifid: { plain: 0, caesar: 0, affine: 2, substitution: 25, vigenere: 4, autokey: 14, playfair: 69, bifid: 163, hill: 13, transposition: 10 },
+        hill: { plain: 0, caesar: 5, affine: 9, substitution: 26, vigenere: 6, autokey: 26, playfair: 44, bifid: 25, hill: 156, transposition: 3 },
+        transposition: { plain: 43, caesar: 0, affine: 2, substitution: 12, vigenere: 0, autokey: 0, playfair: 7, bifid: 7, hill: 0, transposition: 229 }
       },
-      close: { count: 1424, correct: 839 },
-      clear: { count: 1276, correct: 1068 },
-      keyLength: { count: 300, top1: 58, top3: 134, noPeriod: 66 }
+      close: { count: 1725, correct: 826 },
+      clear: { count: 1275, correct: 1028 },
+      keyLength: { count: 300, top1: 56, top3: 93, noPeriod: 84 }
     },
     n50: {
       perClass: 300,
       confusion: {
-        plain: { plain: 296, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 3 },
-        caesar: { plain: 0, caesar: 290, affine: 0, substitution: 9, vigenere: 0, autokey: 0, playfair: 1, bifid: 0, transposition: 0 },
-        affine: { plain: 0, caesar: 1, affine: 290, substitution: 9, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        substitution: { plain: 0, caesar: 1, affine: 3, substitution: 280, vigenere: 2, autokey: 2, playfair: 6, bifid: 6, transposition: 0 },
-        vigenere: { plain: 0, caesar: 6, affine: 0, substitution: 28, vigenere: 219, autokey: 24, playfair: 5, bifid: 18, transposition: 0 },
-        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 2, vigenere: 22, autokey: 250, playfair: 10, bifid: 16, transposition: 0 },
-        playfair: { plain: 0, caesar: 0, affine: 1, substitution: 6, vigenere: 0, autokey: 0, playfair: 293, bifid: 0, transposition: 0 },
-        bifid: { plain: 0, caesar: 1, affine: 1, substitution: 11, vigenere: 16, autokey: 12, playfair: 33, bifid: 225, transposition: 1 },
-        transposition: { plain: 3, caesar: 1, affine: 0, substitution: 3, vigenere: 0, autokey: 0, playfair: 0, bifid: 1, transposition: 292 }
+        plain: { plain: 292, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 7 },
+        caesar: { plain: 0, caesar: 286, affine: 0, substitution: 12, vigenere: 0, autokey: 0, playfair: 0, bifid: 1, hill: 0, transposition: 1 },
+        affine: { plain: 0, caesar: 0, affine: 283, substitution: 15, vigenere: 0, autokey: 0, playfair: 1, bifid: 0, hill: 0, transposition: 1 },
+        substitution: { plain: 0, caesar: 1, affine: 5, substitution: 278, vigenere: 3, autokey: 1, playfair: 8, bifid: 4, hill: 0, transposition: 0 },
+        vigenere: { plain: 0, caesar: 5, affine: 0, substitution: 17, vigenere: 238, autokey: 21, playfair: 3, bifid: 16, hill: 0, transposition: 0 },
+        autokey: { plain: 0, caesar: 1, affine: 1, substitution: 4, vigenere: 74, autokey: 189, playfair: 6, bifid: 25, hill: 0, transposition: 0 },
+        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 5, vigenere: 0, autokey: 0, playfair: 294, bifid: 0, hill: 0, transposition: 1 },
+        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 11, vigenere: 20, autokey: 5, playfair: 41, bifid: 222, hill: 0, transposition: 1 },
+        hill: { plain: 0, caesar: 0, affine: 2, substitution: 14, vigenere: 8, autokey: 1, playfair: 11, bifid: 9, hill: 255, transposition: 0 },
+        transposition: { plain: 3, caesar: 0, affine: 0, substitution: 12, vigenere: 0, autokey: 0, playfair: 2, bifid: 3, hill: 0, transposition: 280 }
       },
-      close: { count: 326, correct: 227 },
-      clear: { count: 2374, correct: 2208 },
-      keyLength: { count: 300, top1: 148, top3: 242, noPeriod: 23 }
+      close: { count: 394, correct: 256 },
+      clear: { count: 2606, correct: 2361 },
+      keyLength: { count: 300, top1: 128, top3: 206, noPeriod: 42 }
     },
     n100: {
       perClass: 300,
       confusion: {
-        plain: { plain: 299, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        caesar: { plain: 0, caesar: 294, affine: 2, substitution: 4, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        affine: { plain: 0, caesar: 0, affine: 295, substitution: 5, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        vigenere: { plain: 0, caesar: 1, affine: 0, substitution: 16, vigenere: 279, autokey: 1, playfair: 0, bifid: 3, transposition: 0 },
-        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 298, playfair: 0, bifid: 2, transposition: 0 },
-        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 3, vigenere: 0, autokey: 0, playfair: 297, bifid: 0, transposition: 0 },
-        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 8, vigenere: 3, autokey: 2, playfair: 5, bifid: 282, transposition: 0 },
-        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 3, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 297 }
+        plain: { plain: 294, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 6 },
+        caesar: { plain: 0, caesar: 292, affine: 1, substitution: 7, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        affine: { plain: 0, caesar: 0, affine: 297, substitution: 3, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        vigenere: { plain: 0, caesar: 0, affine: 0, substitution: 9, vigenere: 286, autokey: 1, playfair: 2, bifid: 1, hill: 0, transposition: 1 },
+        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 1, vigenere: 5, autokey: 284, playfair: 0, bifid: 10, hill: 0, transposition: 0 },
+        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 4, vigenere: 0, autokey: 0, playfair: 295, bifid: 0, hill: 0, transposition: 1 },
+        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 8, vigenere: 4, autokey: 1, playfair: 10, bifid: 277, hill: 0, transposition: 0 },
+        hill: { plain: 0, caesar: 0, affine: 0, substitution: 7, vigenere: 0, autokey: 0, playfair: 3, bifid: 6, hill: 284, transposition: 0 },
+        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 4, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 296 }
       },
-      close: { count: 101, correct: 78 },
-      clear: { count: 2599, correct: 2563 },
-      keyLength: { count: 300, top1: 239, top3: 286, noPeriod: 25 }
+      close: { count: 101, correct: 63 },
+      clear: { count: 2899, correct: 2842 },
+      keyLength: { count: 300, top1: 234, top3: 288, noPeriod: 39 }
     },
     n200: {
       perClass: 300,
       confusion: {
-        plain: { plain: 300, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        caesar: { plain: 0, caesar: 297, affine: 1, substitution: 2, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        affine: { plain: 0, caesar: 0, affine: 296, substitution: 4, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        vigenere: { plain: 0, caesar: 1, affine: 0, substitution: 8, vigenere: 291, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 297, playfair: 0, bifid: 3, transposition: 0 },
-        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 3, vigenere: 0, autokey: 0, playfair: 297, bifid: 0, transposition: 0 },
-        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 6, vigenere: 0, autokey: 1, playfair: 2, bifid: 291, transposition: 0 },
-        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 5, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 295 }
+        plain: { plain: 299, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 1 },
+        caesar: { plain: 0, caesar: 298, affine: 0, substitution: 2, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        affine: { plain: 0, caesar: 0, affine: 296, substitution: 4, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        vigenere: { plain: 0, caesar: 0, affine: 0, substitution: 7, vigenere: 292, autokey: 0, playfair: 1, bifid: 0, hill: 0, transposition: 0 },
+        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 298, playfair: 0, bifid: 2, hill: 0, transposition: 0 },
+        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 4, vigenere: 0, autokey: 0, playfair: 296, bifid: 0, hill: 0, transposition: 0 },
+        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 3, vigenere: 0, autokey: 0, playfair: 1, bifid: 296, hill: 0, transposition: 0 },
+        hill: { plain: 0, caesar: 0, affine: 0, substitution: 2, vigenere: 0, autokey: 0, playfair: 0, bifid: 1, hill: 297, transposition: 0 },
+        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 6, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 294 }
       },
-      close: { count: 22, correct: 12 },
-      clear: { count: 2678, correct: 2652 },
-      keyLength: { count: 300, top1: 273, top3: 299, noPeriod: 7 }
+      close: { count: 23, correct: 14 },
+      clear: { count: 2977, correct: 2952 },
+      keyLength: { count: 300, top1: 286, top3: 299, noPeriod: 11 }
     },
     n400: {
       perClass: 300,
       confusion: {
-        plain: { plain: 300, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        caesar: { plain: 0, caesar: 300, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        affine: { plain: 0, caesar: 0, affine: 299, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 0 },
-        vigenere: { plain: 0, caesar: 2, affine: 0, substitution: 0, vigenere: 296, autokey: 0, playfair: 0, bifid: 2, transposition: 0 },
-        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 300, playfair: 0, bifid: 0, transposition: 0 },
-        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 300, bifid: 0, transposition: 0 },
-        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 299, transposition: 0 },
-        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, transposition: 300 }
+        plain: { plain: 300, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        caesar: { plain: 0, caesar: 299, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        affine: { plain: 0, caesar: 0, affine: 300, substitution: 0, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        substitution: { plain: 0, caesar: 0, affine: 0, substitution: 300, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        vigenere: { plain: 0, caesar: 0, affine: 0, substitution: 2, vigenere: 295, autokey: 0, playfair: 0, bifid: 3, hill: 0, transposition: 0 },
+        autokey: { plain: 0, caesar: 0, affine: 0, substitution: 0, vigenere: 0, autokey: 300, playfair: 0, bifid: 0, hill: 0, transposition: 0 },
+        playfair: { plain: 0, caesar: 0, affine: 0, substitution: 4, vigenere: 0, autokey: 0, playfair: 296, bifid: 0, hill: 0, transposition: 0 },
+        bifid: { plain: 0, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 299, hill: 0, transposition: 0 },
+        hill: { plain: 0, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 1, hill: 298, transposition: 0 },
+        transposition: { plain: 0, caesar: 0, affine: 0, substitution: 1, vigenere: 0, autokey: 0, playfair: 0, bifid: 0, hill: 0, transposition: 299 }
       },
-      close: { count: 2, correct: 1 },
-      clear: { count: 2698, correct: 2693 },
-      keyLength: { count: 300, top1: 297, top3: 300, noPeriod: 0 }
+      close: { count: 8, correct: 2 },
+      clear: { count: 2992, correct: 2984 },
+      keyLength: { count: 300, top1: 296, top3: 300, noPeriod: 0 }
     }
   }
 };

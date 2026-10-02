@@ -26,6 +26,8 @@ export const PLAINTEXT_SOURCE = [
 ];
 
 const ADFGVX_SQUARE = 'INDEPC176ABFGHJKLMOQRSTUVWXYZ0234589';
+// 3×3 のヒル暗号の鍵（Wikipedia の例 GYBNQKURP）
+const HILL3_KEY = [[6, 24, 1], [13, 16, 10], [20, 17, 15]];
 
 // type＝判定で出てほしい方式（trap は対象外・判定が崩れる例）、params＝鍵（画面では伏せて表示し、押すと見える）
 export function sampleDefs(plain) {
@@ -46,7 +48,8 @@ export function sampleDefs(plain) {
     { id: 'columnar', type: 'transposition', params: { keyword: 'ZEBRAS' }, letters: C.columnarEncrypt(plain, 'ZEBRAS') },
     { id: 'adfgvx', type: 'adfgvx', params: { square: ADFGVX_SQUARE, keyword: 'LIBERTY' }, letters: C.adfgvxEncrypt(plain, ADFGVX_SQUARE, 'LIBERTY') },
     { id: 'polybius', type: 'polybius', params: {}, digits: C.polybiusEncode(plain) },
-    { id: 'trapHill', type: 'trap', params: { matrix: '3 3 / 2 5' }, letters: C.hill2Encrypt(plain, [[3, 3], [2, 5]]) },
+    { id: 'hill', type: 'hill', params: { matrix: '3 3 / 2 5' }, letters: C.hill2Encrypt(plain, [[3, 3], [2, 5]]) },
+    { id: 'trapHill3', type: 'trap', params: { matrix: '6 24 1 / 13 16 10 / 20 17 15' }, letters: C.hillEncrypt(plain, HILL3_KEY) },
     { id: 'trapShortVigenere', type: 'trap', params: { keyword: 'LIBERTY' }, letters: C.vigenereEncrypt(short, 'LIBERTY') }
   ];
 }

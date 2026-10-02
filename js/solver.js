@@ -6,7 +6,7 @@ import * as C from './cipher-core.js';
 import { letterCounts, bestShift, bigramScore } from './features.js';
 import { keyLengthCandidates } from './keylength.js';
 
-export const MAX_KEY_LENGTH = 12;
+export const MAX_KEY_LENGTH = 20;
 export const MAX_PRIMER = 12;
 
 const A = C.ALPHABET;
@@ -70,6 +70,43 @@ export function solveVigenere(s, english, lengths = defaultKeyLengths(s)) {
       if (!best || score > best.score) {
         best = { variant, keyLength: L, key: reversed ? null : shifts.map((k) => A[k]).join(''), plaintext: p, score };
       }
+    }
+  }
+  return best;
+}
+
+// ヒル暗号（2×2）: 平文の組の1文字目は「逆行列の1行目」だけ、2文字目は「2行目」だけで決まる。
+// 1行の候補（26×26通り）ごとに、戻した字の頻度が英語にどれだけ近いかを測り、上位 HILL_TOP 個どうしを組み合わせて
+// 逆行列になる組の中から、戻した文がもっとも英語らしいものを選ぶ（2つの行は同じ候補の表から選ぶ）
+export const HILL_TOP = 12;
+
+export function solveHill2(s, english) {
+  const t = s.length % 2 ? s.slice(0, -1) : s;
+  const n = t.length / 2;
+  if (n < 2) return null;
+  const pairs = [];
+  for (let i = 0; i < t.length; i += 2) pairs.push([A.indexOf(t[i]), A.indexOf(t[i + 1])]);
+  const rows = [];
+  for (let a = 0; a < 26; a++) {
+    for (let b = 0; b < 26; b++) {
+      if (a === 0 && b === 0) continue;
+      const counts = new Array(26).fill(0);
+      for (const [x, y] of pairs) counts[(a * x + b * y) % 26]++;
+      let chi = 0;
+      for (let k = 0; k < 26; k++) chi += (counts[k] - n * english.freq[k]) ** 2 / (n * english.freq[k]);
+      rows.push({ row: [a, b], chi });
+    }
+  }
+  rows.sort((p, q) => p.chi - q.chi);
+  const top = rows.slice(0, HILL_TOP).map((r) => r.row);
+  let best = null;
+  for (const r1 of top) {
+    for (const r2 of top) {
+      const inv = [r1, r2];
+      if (C.modInverse(C.determinant(inv)) === null) continue;
+      const p = C.hillEncrypt(t, inv);
+      const score = bigramScore(p, english.bigram);
+      if (!best || score > best.score) best = { inverse: inv, key: C.inverse2(inv), plaintext: p, score };
     }
   }
   return best;

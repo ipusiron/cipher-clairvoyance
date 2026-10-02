@@ -260,18 +260,49 @@ export function bifidEncrypt(s, square, period = null) {
   return out;
 }
 
-// ヒル暗号（2×2）。key＝[[a, b], [c, d]]、平文の2文字を列ベクトルとして掛ける。奇数長なら最後に pad を足す
-export function hill2Encrypt(s, key, pad = 'X') {
-  const [[a, b], [c, d]] = key;
-  if (modInverse(mod(a * d - b * c, 26)) === null) throw new RangeError('key matrix is not invertible mod 26');
-  const t = s.length % 2 ? s + pad : s;
+// 2×2・3×3 の行列式（26 を法とする）
+export function determinant(m) {
+  if (m.length === 2) return mod(m[0][0] * m[1][1] - m[0][1] * m[1][0], 26);
+  if (m.length === 3) {
+    const [[a, b, c], [d, e, f], [g, h, i]] = m;
+    return mod(a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g), 26);
+  }
+  throw new RangeError('only 2x2 and 3x3 matrices are supported');
+}
+
+// 2×2 の逆行列（26 を法とする。逆がなければ null）
+export function inverse2(m) {
+  const inv = modInverse(determinant(m));
+  if (inv === null) return null;
+  const [[a, b], [c, d]] = m;
+  return [[mod(d * inv, 26), mod(-b * inv, 26)], [mod(-c * inv, 26), mod(a * inv, 26)]];
+}
+
+// ヒル暗号（n×n、n＝2 または 3）。平文の n 文字を列ベクトルとして鍵の行列を掛ける。長さが n の倍数でなければ pad で埋める
+export function hillEncrypt(s, key, pad = 'X') {
+  const n = key.length;
+  if (modInverse(determinant(key)) === null) throw new RangeError('key matrix is not invertible mod 26');
+  let t = s;
+  while (t.length % n) t += pad;
   let out = '';
-  for (let i = 0; i < t.length; i += 2) {
-    const x = code(t[i]);
-    const y = code(t[i + 1]);
-    out += letter(a * x + b * y) + letter(c * x + d * y);
+  for (let i = 0; i < t.length; i += n) {
+    const v = [...t.slice(i, i + n)].map(code);
+    for (let r = 0; r < n; r++) out += letter(key[r].reduce((acc, k, j) => acc + k * v[j], 0));
   }
   return out;
+}
+
+// ヒル暗号（2×2）。key＝[[a, b], [c, d]]
+export function hill2Encrypt(s, key, pad = 'X') {
+  if (key.length !== 2) throw new RangeError('key must be 2x2');
+  return hillEncrypt(s, key, pad);
+}
+
+// ヒル暗号（2×2）の復号（鍵の逆行列を掛ける）
+export function hill2Decrypt(s, key) {
+  const inv = inverse2(key);
+  if (!inv) throw new RangeError('key matrix is not invertible mod 26');
+  return hillEncrypt(s.length % 2 ? s.slice(0, -1) : s, inv);
 }
 
 // ポリュビオス暗号（標準の5×5、J は I とみなす。行と列の数字 1〜5 の組）

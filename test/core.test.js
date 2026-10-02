@@ -150,17 +150,26 @@ test('既知解答: バイフィッド暗号（Wikipedia の表、文全体を1�
   assert.ok(!C.bifidEncrypt('JUMPINGJACK', C.playfairSquare('KEY')).includes('J'));
 });
 
-test('既知解答: ヒル暗号（2×2、鍵 [[3,3],[2,5]]）とポリュビオス暗号（BAT＝12 11 44）', () => {
+test('既知解答: ヒル暗号（2×2 の HELP→HIAT と逆行列、3×3 の ACT→POH・CAT→FIN）とポリュビオス暗号（BAT＝12 11 44）', () => {
   assert.equal(C.hill2Encrypt('HELP', [[3, 3], [2, 5]]), 'HIAT');
+  assert.deepEqual(C.inverse2([[3, 3], [2, 5]]), [[15, 17], [20, 9]]);
+  assert.equal(C.hill2Decrypt('HIAT', [[3, 3], [2, 5]]), 'HELP');
+  const K3 = [[6, 24, 1], [13, 16, 10], [20, 17, 15]];
+  assert.equal(C.hillEncrypt('ACT', K3), 'POH');
+  assert.equal(C.hillEncrypt('CAT', K3), 'FIN');
+  assert.equal(C.determinant(K3), 25);
+  assert.equal(C.inverse2([[2, 4], [1, 2]]), null);
+  assert.throws(() => C.determinant([[1]]), RangeError);
   assert.throws(() => C.hill2Encrypt('HELP', [[2, 4], [1, 2]]), RangeError);
   assert.equal(C.polybiusEncode('BAT'), '12 11 44');
   assert.equal(C.polybiusDecode('12 11 44'), 'BAT');
   assert.equal(C.polybiusDecode('121'), 'B');
 });
 
-test('往復: オートキー（プライマー1〜12字）・ボーフォート型（同じ操作で戻る）・ポリュビオス', () => {
+test('往復: オートキー（プライマー1〜12字）・ボーフォート型（同じ操作で戻る）・ポリュビオス・ヒル（2×2、偶数長）', () => {
   for (let n = 0; n <= TEXT.length; n++) {
     const t = TEXT.slice(0, n);
+    if (n % 2 === 0) for (const k of [[[3, 3], [2, 5]], [[5, 8], [17, 3]]]) assert.equal(C.hill2Decrypt(C.hill2Encrypt(t, k), k), t);
     for (const p of ['A', 'KEY', 'QUEENLY', 'ABCDEFGHIJKL']) assert.equal(C.autokeyDecrypt(C.autokeyEncrypt(t, p), p), t);
     for (const k of ['A', 'FORT', 'JEFFERSON']) assert.equal(C.beaufortEncrypt(C.beaufortEncrypt(t, k), k), t);
     assert.equal(C.polybiusDecode(C.polybiusEncode(t)), t.replace(/J/g, 'I'));

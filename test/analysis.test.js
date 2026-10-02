@@ -49,6 +49,7 @@ test('判定: 長い英文の暗号文は方式どおりに判定し、実測の
     ['autokey', C.autokeyEncrypt(plain, 'LANTERN')],
     ['playfair', C.playfairEncrypt(plain, C.playfairSquare('KEYWORD'))],
     ['bifid', C.bifidEncrypt(plain, C.playfairSquare('KEYWORD'), 7)],
+    ['hill', C.hill2Encrypt(plain, [[5, 8], [17, 3]])],
     ['transposition', C.railFenceEncrypt(plain, 4)]
   ];
   for (const [type, text] of cases) {
@@ -104,9 +105,19 @@ test('判定: オートキー暗号は2段目の試し解きでヴィジュネ�
   assert.equal(v.trial.plaintext, plain);
 });
 
-test('判定: 対象外のヒル暗号を200字以上で入れると、試し解きが英文に戻らないことと、周期がないことを知らせる', () => {
+test('判定: ヒル暗号（2×2）は試し解きで鍵の行列と平文を戻す', () => {
+  const plain = EVAL.slice(90000, 90200);
+  const r = analyze(C.hill2Encrypt(plain, [[3, 3], [2, 5]]));
+  assert.equal(r.winner, 'hill');
+  assert.deepEqual([r.trial.key, r.trial.inverse], [[[3, 3], [2, 5]], [[15, 17], [20, 9]]]);
+  assert.equal(r.trial.plaintext, plain);
+  assert.equal(r.trial.englishLike, true);
+});
+
+test('判定: 対象外の3×3のヒル暗号を200字以上で入れると、試し解きが英文に戻らないことと、周期がないことを知らせる', () => {
+  const K3 = [[6, 24, 1], [13, 16, 10], [20, 17, 15]];
   for (const start of [40000, 50000]) {
-    const r = analyze(C.hill2Encrypt(EVAL.slice(start, start + PERIOD_CHECK_MIN + 100), [[3, 3], [2, 5]]));
+    const r = analyze(C.hillEncrypt(EVAL.slice(start, start + PERIOD_CHECK_MIN + 100), K3));
     assert.ok(POLY_TYPES.includes(r.winner), r.winner);
     assert.equal(r.keyLength.periodFound, false);
     assert.equal(r.trial.englishLike, false);

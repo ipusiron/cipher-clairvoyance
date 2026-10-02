@@ -53,7 +53,7 @@ Try it directly in your browser. The screen can be switched between Japanese and
 - Why this verdict: a table of the 10 statistics (features) next to the typical values for plain English and the first and second places, plus the features that favored the first place, with explanations
 - Notes: close calls, short texts, short polyalphabetic texts that cannot be told apart, trial decryptions that do not turn back into English (possibly an unsupported method), and missing periods
 - Detailed analysis: letter frequencies (with a table of values), the index of coincidence by period with key length candidates, and Kasiski counts
-- 17 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
+- 18 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
 - Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043) with the ciphertext filled in
 - Japanese/English switch, light/dark switch, keyboard operation and a status message for screen readers
 
@@ -83,22 +83,23 @@ Text that was not used for training (an excerpt of Dickens, A Tale of Two Cities
 
 | Method | 20-49 letters | 50-99 letters | 100-199 letters | 200-399 letters | 400+ letters |
 |---|---|---|---|---|---|
-| Plain English (not encrypted) | 94% | 99% | 100% | 100% | 100% |
-| Caesar cipher | 87% | 97% | 98% | 99% | 100% |
-| Affine cipher | 75% | 97% | 98% | 99% | 100% |
-| Simple substitution cipher | 58% | 93% | 100% | 100% | 100% |
-| Vigenère cipher | 29% | 73% | 93% | 97% | 99% |
-| Autokey cipher | 47% | 83% | 99% | 99% | 100% |
-| Playfair cipher | 98% | 98% | 99% | 99% | 100% |
-| Bifid cipher | 59% | 75% | 94% | 97% | 100% |
-| Transposition cipher | 89% | 97% | 99% | 98% | 100% |
+| Plain English (not encrypted) | 96% | 97% | 98% | 100% | 100% |
+| Caesar cipher | 84% | 95% | 97% | 99% | 100% |
+| Affine cipher | 70% | 94% | 99% | 99% | 100% |
+| Simple substitution cipher | 50% | 93% | 100% | 100% | 100% |
+| Vigenère cipher | 13% | 79% | 95% | 97% | 98% |
+| Autokey cipher | 24% | 63% | 95% | 99% | 100% |
+| Playfair cipher | 98% | 98% | 98% | 99% | 99% |
+| Bifid cipher | 54% | 74% | 92% | 99% | 100% |
+| Hill cipher (2×2) | 52% | 85% | 95% | 99% | 99% |
+| Transposition cipher | 76% | 93% | 99% | 98% | 100% |
 
 The key length estimate for the Vigenère cipher (the same 300 Vigenère ciphertexts per range) is as follows.
 
 | Key length | 20-49 letters | 50-99 letters | 100-199 letters | 200-399 letters | 400+ letters |
 |---|---|---|---|---|---|
-| First candidate correct | 19% | 49% | 80% | 91% | 99% |
-| Correct within the top 3 | 45% | 81% | 95% | 100% | 100% |
+| First candidate correct | 19% | 43% | 78% | 95% | 99% |
+| Correct within the top 3 | 31% | 69% | 96% | 100% | 100% |
 
 The "actually correct" rate on the screen is, in the evaluation above, the share of verdicts naming a method for a length range that really were that method. It assumes every method is equally common and does not cover unsupported methods (such as the Hill cipher).
 
@@ -116,7 +117,7 @@ With 20-49 letters, the Vigenère, autokey and Bifid ciphers can hardly be told 
 6. If needed, open "📊 Show the detailed analysis" for the letter frequencies, the index of coincidence by period and the Kasiski counts
 7. Continue with the decoding and learning tools under "🔧 Tools to try next". "Open it with this ciphertext" opens the tool with the text filled in
 
-"📄 Load a sample" offers 17 practice ciphertexts.
+"📄 Load a sample" offers 18 practice ciphertexts.
 
 ---
 

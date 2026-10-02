@@ -33,6 +33,8 @@ function cipherName(r, type) {
 
 const TRIAL_SHOWN = 200;
 
+const matrixText = (m) => `[${m.map((row) => `[${row.join(', ')}]`).join(', ')}]`;
+
 function trialKeyText(trial) {
   switch (trial.type) {
     case 'caesar': return t('trial.caesar', { shift: trial.shift });
@@ -41,6 +43,7 @@ function trialKeyText(trial) {
       return trial.variant === 'beaufort' ? t('trial.beaufort', { length: trial.keyLength })
         : t('trial.vigenere', { length: trial.keyLength, key: trial.key });
     case 'autokey': return t('trial.autokey', { primer: trial.primer, length: trial.primerLength });
+    case 'hill': return t('trial.hill', { key: matrixText(trial.key), inverse: matrixText(trial.inverse) });
     default: return '';
   }
 }
