@@ -10,7 +10,7 @@ English · [日本語](README.md)
 
 **Day044 - 100 Security Tools with Generative AI**
 
-Cipher Clairvoyance is an educational web tool that estimates which classical cipher was used to encrypt English text. It shows every statistic behind the verdict in a table, together with the measured rate at which "this verdict for a ciphertext of this length" was actually correct. For the Caesar, affine, Vigenère and autokey ciphers it goes on to guess the key and turn the text back into plaintext (a "trial decryption"), and it can pass the ciphertext to related tools so you can keep working on it.
+Cipher Clairvoyance is an educational web tool that estimates which classical cipher was used to encrypt English text. It shows every statistic behind the verdict in a table, together with the measured rate at which "this verdict for a ciphertext of this length" was actually correct. For the Caesar, affine, Vigenère, autokey and 2×2 Hill ciphers it goes on to guess the key and turn the text back into plaintext (a "trial decryption"), and it can pass the ciphertext to related tools so you can keep working on it.
 
 "Clairvoyance" means the ability to see what cannot be seen.
 
@@ -38,22 +38,22 @@ Try it directly in your browser. The screen can be switched between Japanese and
 >
 >*For a 30-letter ciphertext the measured rate drops and a note appears (dark mode)*
 
->![The failing case of a Hill cipher](assets/en/screenshot4.png)
+>![The failing case of a 3×3 Hill cipher](assets/en/screenshot4.png)
 >
->*An unsupported Hill cipher is labeled Vigenère, but the notes and the trial decryption show the problem*
+>*An unsupported 3×3 Hill cipher is labeled Vigenère, but the notes and the trial decryption show the problem*
 
 ---
 
 ## ✨ Features
 
-- Verdict: nine kinds of text are told apart by statistics (plain English, Caesar, affine, simple substitution, Vigenère, autokey, Playfair, Bifid and transposition); ADFGX/ADFGVX is recognized by its letters and the Polybius square by its digit pairs
+- Verdict: ten kinds of text are told apart by statistics (plain English, Caesar, affine, simple substitution, Vigenère, autokey, Playfair, Bifid, 2×2 Hill and transposition); ADFGX/ADFGVX is recognized by its letters and the Polybius square by its digit pairs
 - Actually correct: every verdict shows the rate measured for that length range on English text that was not used for training (the model's own probabilities are not shown)
-- Trial decryption: guesses the key of the Caesar, affine (including Atbash), Vigenère, Beaufort-type and autokey ciphers, shows the plaintext candidate and whether it reads as English
-- Second stage: the Vigenère and autokey ciphers have very similar statistics, so with 50 or more letters both are trial-decrypted and the one that turns back into English is ranked first
+- Trial decryption: guesses the key of the Caesar, affine (including Atbash), Vigenère, Beaufort-type, autokey and 2×2 Hill ciphers, shows the plaintext candidate and whether it reads as English, and copies the whole text with a button
+- Second stage: the Vigenère, autokey and Hill ciphers have very similar statistics, so with 50 or more letters all three are trial-decrypted and the one that turns back into English is ranked first
 - Why this verdict: a table of the 10 statistics (features) next to the typical values for plain English and the first and second places, plus the features that favored the first place, with explanations
 - Notes: close calls, short texts, short polyalphabetic texts that cannot be told apart, trial decryptions that do not turn back into English (possibly an unsupported method), and missing periods
 - Detailed analysis: letter frequencies (with a table of values), the index of coincidence by period with key length candidates, and Kasiski counts
-- 18 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
+- 18 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported 3×3 Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
 - Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043) with the ciphertext filled in
 - Japanese/English switch, light/dark switch, keyboard operation and a status message for screen readers
 
@@ -68,9 +68,10 @@ Try it directly in your browser. The screen can be switched between Japanese and
 | Affine cipher | One of the 312 affine maps brings the frequencies back to English (a shift alone does not) |
 | Simple substitution cipher | The index of coincidence is at the English level, but no shift or affine map brings the frequencies back |
 | Vigenère cipher | The index of coincidence drops, and splitting into columns by the key length brings it back to the English level. The Beaufort type (the alphabet runs backwards in each column) has the same statistics and is recognized by the trial decryption |
-| Autokey cipher | The index of coincidence drops but there is no period. It is told apart from the Vigenère cipher by the trial decryption |
+| Autokey cipher | The index of coincidence drops but there is no period. It is told apart from the Vigenère and Hill ciphers by the trial decryption |
 | Playfair cipher | Even length, no J, and no pair of the same letter in the pairs |
 | Bifid cipher | No J and a lower index of coincidence, but unlike Playfair the length may be odd and doubled pairs occur |
+| Hill cipher (2×2) | The index of coincidence drops and there is no period, but a trial decryption with a 2×2 key matrix turns it back into English. It is told apart from the Vigenère and autokey ciphers by the trial decryption |
 | Transposition cipher | The letter frequencies stay English but the adjacent pairs do not look English (rail fence, columnar, turning grille and so on are not told apart) |
 | ADFGX/ADFGVX cipher | The ciphertext uses only A, D, F, G, (V) and X (no statistics needed) |
 | Polybius square cipher | The input consists only of pairs of the digits 1-5. It is turned back into letters with the standard table and then analyzed: "plain English" for the standard table, "simple substitution" for a shuffled one |
@@ -79,7 +80,7 @@ Try it directly in your browser. The screen can be switched between Japanese and
 
 ## 📊 Accuracy by length (measured)
 
-Text that was not used for training (an excerpt of Dickens, A Tale of Two Cities) was encrypted 300 times with each method for each length range, and the table shows the share whose correct method came first. Vigenère keys have 2-12 letters, autokey primers 3-10 letters, the Bifid cipher uses the whole text and 5-10 letter blocks half the time each, and the transposition cipher mixes columnar transposition, rail fence and permutation within blocks in equal parts. The verdicts follow the same procedure as the screen, including the second stage for the Vigenère and autokey ciphers.
+Text that was not used for training (an excerpt of Dickens, A Tale of Two Cities) was encrypted 300 times with each method for each length range, and the table shows the share whose correct method came first. To reflect how real ciphertexts vary, the training and evaluation ciphertexts mix variants: Vigenère keys have 2-20 letters, autokey primers 1-12 letters, the Hill cipher uses any invertible 2×2 matrix, Playfair pads with X, Q or Z, the Bifid cipher uses the whole text and 3-15 letter blocks half the time each, and the transposition cipher mixes columnar transposition (3-15 columns, unpadded or padded with X or random letters), rail fence (2-10 rails) and permutation within blocks in equal parts. The verdicts follow the same procedure as the screen, including the second stage for the Vigenère, autokey and Hill ciphers.
 
 | Method | 20-49 letters | 50-99 letters | 100-199 letters | 200-399 letters | 400+ letters |
 |---|---|---|---|---|---|
@@ -103,7 +104,7 @@ The key length estimate for the Vigenère cipher (the same 300 Vigenère ciphert
 
 The "actually correct" rate on the screen is, in the evaluation above, the share of verdicts naming a method for a length range that really were that method. It assumes every method is equally common and does not cover unsupported methods (such as the Hill cipher).
 
-With 20-49 letters, the Vigenère, autokey and Bifid ciphers can hardly be told apart even by statistics. When one of these three is the verdict at this length, the screen suggests trying the lower-ranked methods too.
+With 20-49 letters, the Vigenère, autokey, Bifid and Hill ciphers can hardly be told apart even by statistics. When one of these four is the verdict at this length, the screen suggests trying the lower-ranked methods too.
 
 ---
 
@@ -125,7 +126,7 @@ With 20-49 letters, the Vigenère, autokey and Bifid ciphers can hardly be told 
 
 The tool computes 10 statistics from the ciphertext (the index of coincidence, the distance from English letter frequencies, the distance after the best shift and the best affine map, the gain in the index of coincidence when the text is split by a period, the English-likeness of adjacent letter pairs and so on) and, for each length range, compares them with the typical distributions of each method (naive Bayes classification). The distributions come from encrypting an excerpt of Jane Austen's Pride and Prejudice with each method, and the evaluation uses a different book.
 
-The Vigenère and autokey ciphers have very similar statistics when no period is visible. With 50 or more letters, if the first place is one of them, both are trial-decrypted and the one whose result is more English-like (by how common its adjacent letter pairs are) is ranked first.
+The Vigenère, autokey and Hill ciphers have very similar statistics when no period is visible. With 50 or more letters, if the first place is one of them, all three are trial-decrypted and the one whose result is more English-like (by how common its adjacent letter pairs are) is ranked first.
 
 Training and evaluation run in a script with a fixed random seed (`tools/build-model.mjs`), so rebuilding always gives the same model (`js/model.js`). The tests check this too. The formulas, thresholds and evaluation procedure are described in [ALGORITHM.md](ALGORITHM.md) (in Japanese).
 
@@ -136,7 +137,7 @@ Training and evaluation run in a script with a fixed random seed (`tools/build-m
 - Information and math classes: have students encrypt the same plaintext with several methods, put the tables under "Why this verdict" side by side, and find which statistics each method breaks and which it keeps
 - Introduction to statistics and machine learning: read "what" a naive Bayes classifier looks at, as typical values per feature and the difference between first and second place. The tables also show in numbers why training and evaluation texts are kept apart and how accuracy drops for short texts
 - First steps on a CTF crypto challenge: get a hint about the method of a classical-looking ciphertext; if the trial decryption is readable, you are done, otherwise pass the ciphertext to a related tool. Remember that methods outside the list are still assigned to one of the listed ones
-- Practice in doubting a machine's verdict: load the failing cases (an unsupported Hill cipher and a short Vigenère cipher) to see why a verdict can be wrong despite a high rate, and how the notes and the trial decryption reveal the mistake
+- Practice in doubting a machine's verdict: load the failing cases (an unsupported 3×3 Hill cipher and a short Vigenère cipher) to see why a verdict can be wrong despite a high rate, and how the notes and the trial decryption reveal the mistake
 - Making puzzle events and escape games: before publishing, check what your ciphertext looks like statistically, whether it is too short to guess, and whether it looks like the intended method
 - Solving puzzles: before starting, get a hint whether letters were replaced or rearranged and whether there is a period
 - History lessons: touch on the history of cryptography through the ADFGVX cipher used by the German army in World War I and samples made from the Declaration of Independence
@@ -150,8 +151,9 @@ Training and evaluation run in a script with a fixed random seed (`tools/build-m
 ## ⚠️ Notes and limitations
 
 - The tool assumes encrypted English. Text in other languages has different statistics, so the verdict will be wrong
-- Methods outside the list (such as the Hill cipher) are still assigned to one of the methods, usually Vigenère or autokey, and the "actually correct" rate does not apply to them. With 200 or more letters, a note shows that the trial decryption did not turn back into English
-- The shorter the text, the more often the verdict is wrong. With 20-49 letters, the Vigenère, autokey and Bifid ciphers can hardly be told apart (see the table above)
+- Methods outside the list (such as a 3×3 Hill cipher) are still assigned to one of the methods, usually Vigenère, autokey or Hill, and the "actually correct" rate does not apply to them. With 200 or more letters, a note shows that the trial decryption did not turn back into English
+- The shorter the text, the more often the verdict is wrong. With 20-49 letters, the Vigenère, autokey, Bifid and Hill ciphers can hardly be told apart (see the table above)
+- The training and evaluation mix the variants above, but other constructions (double transposition, Vigenère keys of 21 or more letters and so on) may lower the accuracy
 - The "actually correct" rate is measured assuming every method is equally common. It does not reflect how often you actually meet each method
 - The trial decryption chooses the key only by how English-like the result is, so it fails on short texts. Breaking simple substitution, Playfair, Bifid, transposition and ADFGVX is the job of the related tools
 - For the Beaufort type only the plaintext is shown, because sources write its key in different ways
@@ -219,13 +221,13 @@ cipher-clairvoyance/
 │   │   ├── screenshot.png    # Screenshot (verdict and trial decryption)
 │   │   ├── screenshot2.png   # Screenshot (periodicity)
 │   │   ├── screenshot3.png   # Screenshot (short ciphertext, dark mode)
-│   │   └── screenshot4.png   # Screenshot (failing case: Hill cipher)
+│   │   └── screenshot4.png   # Screenshot (failing case: 3×3 Hill cipher)
 │   ├── favicon.ico           # Favicon (ICO)
 │   ├── favicon.svg           # Favicon (SVG)
 │   ├── screenshot.png        # Screenshot (verdict and trial decryption)
 │   ├── screenshot2.png       # Screenshot (periodicity)
 │   ├── screenshot3.png       # Screenshot (short ciphertext, dark mode)
-│   └── screenshot4.png       # Screenshot (failing case: Hill cipher)
+│   └── screenshot4.png       # Screenshot (failing case: 3×3 Hill cipher)
 ├── js/                       # JavaScript (ES modules; only file-check.js and theme-init.js are classic scripts)
 │   ├── analysis.js           # From input checks to the verdict and evidence (no DOM)
 │   ├── app.js                # Events, modals and the analysis flow
