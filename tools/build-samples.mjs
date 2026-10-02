@@ -2,12 +2,14 @@
 // 使い方: node tools/build-samples.mjs          … js/samples.js を書き出す
 //         node tools/build-samples.mjs --check  … 書き出す内容が今の js/samples.js と同じかを確かめる（テストで使う）
 // 平文はアメリカ独立宣言（1776年）の冒頭。米国でパブリックドメイン。
-// 暗号文はすべて js/cipher-core.js の参照実装で作り、5文字ずつ区切って書く。
+// 暗号文はすべて js/cipher-core.js の参照実装で作り、5文字ずつ区切って書く（ポリュビオス暗号は数字の組を空白で区切る）。
+// 「判定が崩れる例」（trap）は、いまのモデルで実際に何と判定されるかを expect に記録する（js/model.js を作ってから実行する）。
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as C from '../js/cipher-core.js';
+import { analyze } from '../js/analysis.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'js', 'samples.js');
@@ -25,7 +27,7 @@ export const PLAINTEXT_SOURCE = [
 
 const ADFGVX_SQUARE = 'INDEPC176ABFGHJKLMOQRSTUVWXYZ0234589';
 
-// type＝判定で出てほしい方式、params＝鍵（画面では伏せて表示し、押すと見える）
+// type＝判定で出てほしい方式（trap は対象外・判定が崩れる例）、params＝鍵（画面では伏せて表示し、押すと見える）
 export function sampleDefs(plain) {
   const short = plain.slice(0, 30);
   return [
@@ -36,10 +38,16 @@ export function sampleDefs(plain) {
     { id: 'substitution', type: 'substitution', params: { keyword: 'LIBERTY' }, letters: C.substitutionEncrypt(plain, C.keywordAlphabet('LIBERTY')) },
     { id: 'vigenere', type: 'vigenere', params: { keyword: 'INDEPENDENCE' }, letters: C.vigenereEncrypt(plain, 'INDEPENDENCE') },
     { id: 'vigenereShort', type: 'vigenere', params: { keyword: 'EAGLE' }, letters: C.vigenereEncrypt(plain, 'EAGLE') },
+    { id: 'autokey', type: 'autokey', params: { primer: 'FREEDOM' }, letters: C.autokeyEncrypt(plain, 'FREEDOM') },
+    { id: 'beaufort', type: 'vigenere', params: { keyword: 'JEFFERSON' }, letters: C.beaufortEncrypt(plain, 'JEFFERSON') },
     { id: 'playfair', type: 'playfair', params: { keyword: 'MONARCHY' }, letters: C.playfairEncrypt(plain, C.playfairSquare('MONARCHY')) },
+    { id: 'bifid', type: 'bifid', params: { keyword: 'CONSTITUTION' }, letters: C.bifidEncrypt(plain, C.playfairSquare('CONSTITUTION')) },
     { id: 'railfence', type: 'transposition', params: { rails: 3 }, letters: C.railFenceEncrypt(plain, 3) },
     { id: 'columnar', type: 'transposition', params: { keyword: 'ZEBRAS' }, letters: C.columnarEncrypt(plain, 'ZEBRAS') },
-    { id: 'adfgvx', type: 'adfgvx', params: { square: ADFGVX_SQUARE, keyword: 'LIBERTY' }, letters: C.adfgvxEncrypt(plain, ADFGVX_SQUARE, 'LIBERTY') }
+    { id: 'adfgvx', type: 'adfgvx', params: { square: ADFGVX_SQUARE, keyword: 'LIBERTY' }, letters: C.adfgvxEncrypt(plain, ADFGVX_SQUARE, 'LIBERTY') },
+    { id: 'polybius', type: 'polybius', params: {}, digits: C.polybiusEncode(plain) },
+    { id: 'trapHill', type: 'trap', params: { matrix: '3 3 / 2 5' }, letters: C.hill2Encrypt(plain, [[3, 3], [2, 5]]) },
+    { id: 'trapShortVigenere', type: 'trap', params: { keyword: 'LIBERTY' }, letters: C.vigenereEncrypt(short, 'LIBERTY') }
   ];
 }
 
@@ -71,8 +79,10 @@ export function renderSamples() {
   const defs = sampleDefs(plain);
   out.push(defs.map((d) => {
     const params = Object.entries(d.params).map(([k, v]) => `${k}: ${typeof v === 'number' ? v : `'${v}'`}`).join(', ');
-    return `  {\n    id: '${d.id}',\n    type: '${d.type}',\n    params: { ${params} },\n`
-      + `    ciphertext: \`${wrap(groups(d.letters), '      ')}\`\n  }`;
+    const text = d.digits ?? groups(d.letters);
+    const expect = d.type === 'trap' ? `    expect: '${analyze(text).winner}',\n` : '';
+    return `  {\n    id: '${d.id}',\n    type: '${d.type}',\n${expect}    params: { ${params} },\n`
+      + `    ciphertext: \`${wrap(text, '      ')}\`\n  }`;
   }).join(',\n'));
   out.push('];');
   return out.join('\n').replace(/ \{ {2}\}/g, ' {}') + '\n';

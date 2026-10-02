@@ -32,25 +32,45 @@ function decrypt(sample) {
     case 'playfair': return C.playfairDecrypt(c, C.playfairSquare(p.keyword));
     case 'railfence': return C.railFenceDecrypt(c, p.rails);
     case 'columnar': return C.columnarDecrypt(c, p.keyword);
+    case 'autokey': return C.autokeyDecrypt(c, p.primer);
+    case 'beaufort': return C.beaufortEncrypt(c, p.keyword);
+    case 'trapShortVigenere': return C.vigenereDecrypt(c, p.keyword);
     default: return null;
   }
 }
 
 test('各サンプルを書かれた鍵で復号すると平文に戻る', () => {
   for (const s of CIPHER_SAMPLES) {
-    const expected = s.id === 'caesarShort' ? SAMPLE_PLAINTEXT.slice(0, 30)
+    const expected = ['caesarShort', 'trapShortVigenere'].includes(s.id) ? SAMPLE_PLAINTEXT.slice(0, 30)
       : s.id === 'playfair' ? C.playfairDigrams(SAMPLE_PLAINTEXT).join('') : SAMPLE_PLAINTEXT;
     if (s.id === 'adfgvx') {
       assert.equal(C.lettersOnly(s.ciphertext), C.adfgvxEncrypt(SAMPLE_PLAINTEXT, s.params.square, s.params.keyword));
       assert.equal(C.lettersOnly(s.ciphertext).length, SAMPLE_PLAINTEXT.length * 2);
       continue;
     }
+    if (s.id === 'bifid') {
+      assert.equal(C.lettersOnly(s.ciphertext), C.bifidEncrypt(SAMPLE_PLAINTEXT, C.playfairSquare(s.params.keyword)));
+      continue;
+    }
+    if (s.id === 'trapHill') {
+      assert.equal(C.lettersOnly(s.ciphertext), C.hill2Encrypt(SAMPLE_PLAINTEXT, [[3, 3], [2, 5]]));
+      assert.equal(s.params.matrix, '3 3 / 2 5');
+      continue;
+    }
+    if (s.id === 'polybius') {
+      assert.equal(C.polybiusDecode(s.ciphertext), SAMPLE_PLAINTEXT.replace(/J/g, 'I'));
+      continue;
+    }
     assert.equal(decrypt(s), expected, s.id);
   }
 });
 
-test('暗号文は5文字ずつ区切って書いてある', () => {
+test('暗号文は5文字ずつ（ポリュビオス暗号は数字2つずつ）区切って書いてある', () => {
   for (const s of CIPHER_SAMPLES) {
+    if (s.id === 'polybius') {
+      assert.ok(s.ciphertext.split(/\s+/).every((g) => /^[1-5]{2}$/.test(g)));
+      continue;
+    }
     const groups = s.ciphertext.split(/\s+/);
     for (const g of groups.slice(0, -1)) assert.equal(g.length, 5, s.id);
     assert.ok(groups.at(-1).length >= 1 && groups.at(-1).length <= 5);
@@ -61,7 +81,10 @@ test('各サンプルは意図した方式と判定される', () => {
   for (const s of CIPHER_SAMPLES) {
     const r = analyze(s.ciphertext);
     assert.equal(r.ok, true, s.id);
-    assert.equal(r.winner, s.type, s.id);
+    if (s.type === 'trap') assert.equal(r.winner, s.expect, s.id);
+    else if (s.type === 'polybius') assert.deepEqual([Boolean(r.polybius), r.winner], [true, 'plain']);
+    else assert.equal(r.winner, s.type, s.id);
+    if (s.type !== 'trap') assert.equal(s.expect, undefined);
   }
 });
 

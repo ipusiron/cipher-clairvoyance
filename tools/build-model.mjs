@@ -12,7 +12,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as C from '../js/cipher-core.js';
 import { FEATURES, extractFeatures } from '../js/features.js';
-import { classifyVector, CLOSE_MARGIN } from '../js/classifier.js';
+import { CLOSE_MARGIN } from '../js/classifier.js';
+import { decide, STAGE2_MIN } from '../js/decide.js';
 import { keyLengthCandidates, KEY_IC_THRESHOLD, PERIOD_CHECK_MIN } from '../js/keylength.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +22,7 @@ const OUT = path.join(ROOT, 'js', 'model.js');
 export const SEED = 20261002;
 export const N_TRAIN = 400;
 export const N_EVAL = 300;
-export const CLASSES = ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'playfair', 'transposition'];
+export const CLASSES = ['plain', 'caesar', 'affine', 'substitution', 'vigenere', 'autokey', 'playfair', 'bifid', 'transposition'];
 // 長さ帯（英字の数）。maxGen は最後の帯で学習・評価に使う長さの上限
 export const BUCKETS = [
   { id: 'n20', min: 20, max: 49 },
@@ -31,6 +32,7 @@ export const BUCKETS = [
   { id: 'n400', min: 400, max: null, maxGen: 1000 }
 ];
 export const VIGENERE_KEY = [2, 12];
+export const AUTOKEY_PRIMER = [3, 10];
 const VAR_FLOOR_RATIO = 1e-3;
 
 function readCorpus(name) {
@@ -92,7 +94,12 @@ function makers(rnd) {
       const k = VIGENERE_KEY[0] + ri(VIGENERE_KEY[1] - VIGENERE_KEY[0] + 1);
       return { c: C.vigenereEncrypt(s, Array.from({ length: k }, () => C.ALPHABET[ri(26)]).join('')), keyLength: k };
     },
+    autokey: (s) => {
+      const k = AUTOKEY_PRIMER[0] + ri(AUTOKEY_PRIMER[1] - AUTOKEY_PRIMER[0] + 1);
+      return { c: C.autokeyEncrypt(s, Array.from({ length: k }, () => C.ALPHABET[ri(26)]).join('')) };
+    },
     playfair: (s) => ({ c: C.playfairEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join('')) }),
+    bifid: (s) => ({ c: C.bifidEncrypt(s, shuffled('ABCDEFGHIKLMNOPQRSTUVWXYZ').join(''), rnd() < 0.5 ? null : 5 + ri(6)) }),
     transposition: (s) => {
       const r = ri(3);
       if (r === 0) return { c: C.columnarEncrypt(s, shuffled([...Array(3 + ri(8)).keys()])) };
@@ -180,8 +187,8 @@ export function buildModel() {
     for (const type of CLASSES) {
       for (let t = 0; t < N_EVAL; t++) {
         const s = sample(evalText, type, b, rnd, make);
-        const r = classifyVector(extractFeatures(s.c, english).vector, s.c.length, model);
-        const pred = r.ranking[0].type;
+        const r = decide(s.c, extractFeatures(s.c, english).vector, model);
+        const pred = r.winner;
         confusion[type][pred]++;
         const bin = r.close ? close : clear;
         bin.count++;
@@ -215,7 +222,8 @@ export function renderModel(model) {
   out.push('// どちらも米国でパブリックドメイン。抜粋の作り方は tools/make-corpus.mjs。');
   out.push(`// 乱数の種 ${SEED}、学習は長さ帯×方式ごとに ${N_TRAIN} 件、評価は ${N_EVAL} 件。`);
   out.push(`// 接戦の目安 CLOSE_MARGIN=${CLOSE_MARGIN}、鍵長の閾値 KEY_IC_THRESHOLD=${KEY_IC_THRESHOLD}`
-    + `（周期の確認は ${PERIOD_CHECK_MIN} 字以上）、ヴィジュネルの鍵長 ${VIGENERE_KEY.join('〜')}。`);
+    + `（周期の確認は ${PERIOD_CHECK_MIN} 字以上）、ヴィジュネルの鍵長 ${VIGENERE_KEY.join('〜')}、`
+    + `オートキーのプライマー ${AUTOKEY_PRIMER.join('〜')} 字、ヴィジュネル／オートキーの2段目は ${STAGE2_MIN} 字以上。`);
   out.push('');
   out.push('export const MODEL = {');
   out.push(`  version: ${model.version},`);

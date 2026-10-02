@@ -72,7 +72,10 @@ test('長さ別の正答率の表は、モデルの評価と一致する', () =>
 });
 
 test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデルの平均と一致する', () => {
-  const names = { plain: '英語の平文', caesar: 'シーザー', affine: 'アフィン', substitution: '単一換字', vigenere: 'ヴィジュネル', playfair: 'プレイフェア', transposition: '転置' };
+  const names = {
+    plain: '英語の平文', caesar: 'シーザー', affine: 'アフィン', substitution: '単一換字', vigenere: 'ヴィジュネル',
+    autokey: 'オートキー', playfair: 'プレイフェア', bifid: 'バイフィッド', transposition: '転置'
+  };
   const start = algorithm.indexOf('| 方式 | ic |');
   assert.ok(start >= 0);
   const typical = algorithm.slice(start, algorithm.indexOf('\n---', start));

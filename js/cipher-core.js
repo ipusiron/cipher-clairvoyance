@@ -207,6 +207,92 @@ export function columnarDecrypt(s, key) {
   return out.join('');
 }
 
+// オートキー暗号（平文オートキー）: 鍵の流れ＝プライマーのあとに平文そのものを続ける
+export function autokeyEncrypt(s, primer) {
+  const k = lettersOnly(primer);
+  if (!k) throw new RangeError('primer must contain letters');
+  const stream = k + s;
+  let out = '';
+  for (let i = 0; i < s.length; i++) out += letter(code(s[i]) + code(stream[i]));
+  return out;
+}
+
+export function autokeyDecrypt(s, primer) {
+  const k = lettersOnly(primer);
+  if (!k) throw new RangeError('primer must contain letters');
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const keyChar = i < k.length ? k[i] : out[i - k.length];
+    out += letter(code(s[i]) - code(keyChar));
+  }
+  return out;
+}
+
+// ボーフォート型: 各位置で「鍵の字 − 平文の字」。同じ操作で復号できる（相反）。
+// 資料によって式の表し方が違う（定数を足す形など）が、どれも各列で字の並びを逆向きにしてずらす点は同じ
+export function beaufortEncrypt(s, key) {
+  const k = lettersOnly(key);
+  if (!k) throw new RangeError('key must contain letters');
+  let out = '';
+  for (let i = 0; i < s.length; i++) out += letter(code(k[i % k.length]) - code(s[i]));
+  return out;
+}
+
+// バイフィッド暗号（5×5、J は I とみなす）。period を省くと文全体を1つのブロックとして扱う
+export function bifidEncrypt(s, square, period = null) {
+  if (square.length !== 25 || new Set(square).size !== 25) throw new RangeError('square must have 25 distinct letters');
+  const t = s.replace(/J/g, 'I');
+  const size = period === null ? t.length : period;
+  if (!Number.isInteger(size) || size < 1) throw new RangeError('period must be a positive integer');
+  let out = '';
+  for (let start = 0; start < t.length; start += size) {
+    const block = t.slice(start, start + size);
+    const rows = [];
+    const cols = [];
+    for (const c of block) {
+      const i = square.indexOf(c);
+      rows.push(Math.floor(i / 5));
+      cols.push(i % 5);
+    }
+    const seq = rows.concat(cols);
+    for (let i = 0; i < seq.length; i += 2) out += square[seq[i] * 5 + seq[i + 1]];
+  }
+  return out;
+}
+
+// ヒル暗号（2×2）。key＝[[a, b], [c, d]]、平文の2文字を列ベクトルとして掛ける。奇数長なら最後に pad を足す
+export function hill2Encrypt(s, key, pad = 'X') {
+  const [[a, b], [c, d]] = key;
+  if (modInverse(mod(a * d - b * c, 26)) === null) throw new RangeError('key matrix is not invertible mod 26');
+  const t = s.length % 2 ? s + pad : s;
+  let out = '';
+  for (let i = 0; i < t.length; i += 2) {
+    const x = code(t[i]);
+    const y = code(t[i + 1]);
+    out += letter(a * x + b * y) + letter(c * x + d * y);
+  }
+  return out;
+}
+
+// ポリュビオス暗号（標準の5×5、J は I とみなす。行と列の数字 1〜5 の組）
+export const POLYBIUS_SQUARE = 'ABCDEFGHIKLMNOPQRSTUVWXYZ';
+
+export function polybiusEncode(s, square = POLYBIUS_SQUARE) {
+  return [...s.replace(/J/g, 'I')].map((c) => {
+    const i = square.indexOf(c);
+    if (i < 0) throw new RangeError(`letter not in square: ${c}`);
+    return `${Math.floor(i / 5) + 1}${(i % 5) + 1}`;
+  }).join(' ');
+}
+
+// 数字の組を、表の字へ戻す（数字以外は無視。数字が奇数個なら最後の1つは使わない）
+export function polybiusDecode(digits, square = POLYBIUS_SQUARE) {
+  const d = String(digits).replace(/[^1-5]/g, '');
+  let out = '';
+  for (let i = 0; i + 1 < d.length; i += 2) out += square[(Number(d[i]) - 1) * 5 + Number(d[i + 1]) - 1];
+  return out;
+}
+
 // ADFGX（5×5、J は I とみなす）と ADFGVX（6×6、A〜Z と 0〜9）
 export const ADFGX_SYMBOLS = 'ADFGX';
 export const ADFGVX_SYMBOLS = 'ADFGVX';

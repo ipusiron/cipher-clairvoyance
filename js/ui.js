@@ -36,12 +36,47 @@ export function rangeText(bucket) {
 
 function cipherName(r, type) {
   if (type === 'adfgvx' && r.variant === 'adfgx') return t('cipher.adfgx');
+  if (r.polybius) return t('result.polybiusName', { name: t('cipher.polybius'), inner: t(`cipher.${type}`) });
   return t(`cipher.${type}`);
+}
+
+const TRIAL_SHOWN = 200;
+
+function trialKeyText(trial) {
+  switch (trial.type) {
+    case 'caesar': return t('trial.caesar', { shift: trial.shift });
+    case 'affine': return trial.a === 25 && trial.b === 25 ? t('trial.atbash') : t('trial.affine', { a: trial.a, b: trial.b });
+    case 'vigenere':
+      return trial.variant === 'beaufort' ? t('trial.beaufort', { length: trial.keyLength })
+        : t('trial.vigenere', { length: trial.keyLength, key: trial.key });
+    case 'autokey': return t('trial.autokey', { primer: trial.primer, length: trial.primerLength });
+    default: return '';
+  }
+}
+
+// 試し解き（鍵の候補と、戻した文の先頭）
+function renderTrial(r) {
+  const box = $('trialSection');
+  box.replaceChildren();
+  const trial = r.trial;
+  box.classList.toggle('hidden', !trial && !r.polybius);
+  if (r.polybius) {
+    box.append(el('h3', '', t('polybius.banner')));
+    box.append(el('p', 'trial-plain', r.polybius.decoded.slice(0, TRIAL_SHOWN)));
+  }
+  if (!trial) return;
+  box.append(el('h3', '', t('trial.title')));
+  box.append(el('p', 'trial-key', trialKeyText(trial)));
+  box.append(el('p', `trial-badge ${trial.englishLike ? 'is-good' : 'is-bad'}`, t(trial.englishLike ? 'trial.good' : 'trial.bad')));
+  box.append(el('p', 'trial-plain', trial.plaintext.slice(0, TRIAL_SHOWN)));
+  if (trial.plaintext.length > TRIAL_SHOWN) box.append(el('p', 'muted', t('trial.more', { shown: TRIAL_SHOWN, total: trial.plaintext.length })));
+  box.append(el('p', 'muted', t('trial.note')));
 }
 
 function noteText(note) {
   const params = { ...note.params };
   if (note.key === 'note.close') params.second = t(`cipher.${params.second}`);
+  if (note.key === 'note.stage2') params.other = t(`cipher.${params.other}`);
   if (note.key === 'note.ignored') params.sample = params.sample.map((c) => t('note.ignoredChar', { c }));
   return t(note.key, params);
 }
@@ -243,12 +278,14 @@ export function renderDetails(r) {
 export function renderResult(r) {
   $('mainResult').classList.remove('hidden');
   $('winnerName').textContent = cipherName(r, r.winner);
-  $('winnerDesc').textContent = t(r.winner === 'adfgvx' && r.variant === 'adfgx' ? 'desc.adfgx' : `desc.${r.winner}`);
+  $('winnerDesc').textContent = r.polybius ? t('desc.polybius')
+    : t(r.winner === 'adfgvx' && r.variant === 'adfgx' ? 'desc.adfgx' : `desc.${r.winner}`);
   renderMeasured(r);
   const notes = $('resultNotes');
   notes.replaceChildren(...r.notes.filter((n) => n.key !== 'note.ignored' && n.key !== 'note.fewLetters').map((n) => el('li', '', noteText(n))));
   notes.classList.toggle('hidden', notes.children.length === 0);
   renderOthers(r);
+  renderTrial(r);
   renderEvidence(r);
   renderLinks(r);
   renderDetails(r);

@@ -98,7 +98,7 @@ function initializeSampleList() {
     name.textContent = t(`sample.name.${sample.id}`);
     const desc = document.createElement('span');
     desc.className = 'sample-desc';
-    desc.textContent = t(`sample.desc.${sample.id}`);
+    desc.textContent = t(`sample.desc.${sample.id}`, { expect: sample.expect ? t(`cipher.${sample.expect}`) : '' });
     load.append(name, desc);
     load.addEventListener('click', () => {
       $('cipherText').value = sample.ciphertext;
