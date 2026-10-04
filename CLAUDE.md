@@ -32,7 +32,7 @@ python -m http.server 8000            # serve locally; file:// cannot load ES mo
 | keylength.js | Vigenère key length candidates (smallest period with mean column IC ≥ 0.058) and Kasiski counts |
 | decide.js | Model ranking plus the Vigenère/Autokey second stage |
 | solver.js | Trial decryption: Caesar, Affine, Vigenère/Beaufort-type, Autokey, Hill 2x2 (scored by English bigram log-probability) |
-| links.js | Related tools and pass-the-ciphertext links (Day009/017/030 via query, Day043 via fragment) |
+| links.js | Related tools and pass-the-ciphertext links (Day009/017/030/046/047 via query, Day043 via fragment; Day047 opens `tab=advanced`; AlphaLoom gets no `n`) |
 | analysis.js | Input inspection (errors vs notes) and the full analysis result; returns message keys, not text |
 | model.js | Generated model (do not edit by hand) |
 | samples.js | Generated samples (do not edit by hand) |

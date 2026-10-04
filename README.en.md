@@ -54,7 +54,7 @@ Try it directly in your browser. The screen can be switched between Japanese and
 - Notes: close calls, short texts, short polyalphabetic texts that cannot be told apart, trial decryptions that do not turn back into English (possibly an unsupported method), and missing periods
 - Detailed analysis: letter frequencies (with a table of values), the index of coincidence by period with key length candidates, and Kasiski counts
 - 18 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported 3×3 Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
-- Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043) with the ciphertext filled in
+- Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043, 046, 047) with the ciphertext filled in
 - Japanese/English switch, light/dark switch, keyboard operation and a status message for screen readers
 
 ---
@@ -144,7 +144,7 @@ Training and evaluation run in a script with a fixed random seed (`tools/build-m
 - Props for novels, games and films: check that a ciphertext shown in the story has believable statistics
 - Learning programming: the reference implementations, features, model generation and tests are small, so you can read how reproducibility with a fixed random seed and tests that pin generated files work
 - A baseline for research and teaching materials: compare another identification method with the same procedure as the accuracy tables
-- Combining with other tools in the series: pass the ciphertext to Frequency Analyzer (Day009) for a closer look at frequencies, pass it with the key length candidate to Modular Text Divider (Day030) to solve it column by column, solve a transposition in the Columnar CipherLab (Day043) solver lab, and learn what the index of coincidence means with IC Learning Visualizer (Day047)
+- Combining with other tools in the series: pass the ciphertext to Frequency Analyzer (Day009) for a closer look at frequencies, pass it with the key length candidate to Modular Text Divider (Day030) to solve it column by column, solve a transposition in the Columnar CipherLab (Day043) solver lab, find the key from column-wise candidates in AlphaLoom (Day046), and pass the ciphertext to IC Learning Visualizer (Day047) to see the key length candidates with their multiples and learn what the index of coincidence means
 
 ---
 
@@ -192,7 +192,11 @@ Depending on the verdict, the screen lists the following tools under "🔧 Tools
 | Frequency Analyzer (Day009) | `?text=` (up to 5,000 letters) |
 | Vigenère Cipher Tool (Day017) | `?text=` |
 | Modular Text Divider (Day030) | `?text=…&n=…` (n is the first key length candidate, 1-20) |
+| AlphaLoom (Day046) | `?text=` (up to 10,000 letters; AlphaLoom estimates the key length) |
+| IC Learning Visualizer (Day047) | `?text=…&tab=advanced` (up to 10,000 letters; opens key length estimation) |
 | Columnar CipherLab (Day043) | `#tab=lab&c=…&m=incomplete` (the solver lab; after "#", so it is not sent to the server) |
+
+The first period by index of coincidence can be a divisor of the key length, so AlphaLoom gets no key length and estimates it itself (for the sample with the 12-letter key INDEPENDENCE, the first candidate is 6). Key length estimation in IC Learning Visualizer (Day047) lists the candidates with their multiples.
 
 - [Caesar Cipher Breaker (Day008)](https://ipusiron.github.io/caesar-cipher-breaker/): solve a Caesar cipher by brute force
 - [Frequency Analyzer (Day009)](https://ipusiron.github.io/frequency-analyzer/): look at letter frequencies in detail
