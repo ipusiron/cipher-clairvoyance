@@ -205,8 +205,8 @@ const JA = {
   'links.pass.alphaloom': 'この暗号文を渡して開く（鍵の長さはAlphaLoomが推定）',
   'links.pass.ic': 'この暗号文を渡して鍵長の推定を開く',
   'links.tooLong': '（{max}字を超えるので渡せません）',
-  'links.passNote': '「渡して開く」は、暗号文の英字をURLに入れて相手のページを開きます。Day043以外はURLの「?」より後ろに入るので、暗号文がGitHub Pagesのサーバーに届きます。'
-    + '人に見せたくない文は渡さないでください。',
+  'links.passNote': '「渡して開く」は、暗号文の英字をURLの「#」より後ろに入れて相手のページを開きます。「#」より後ろはサーバーへ送られません。'
+    + 'ただし、開いたときのURLはブラウザーの閲覧履歴に残ることがあります。',
 
   'sample.showKey': '鍵を見る',
   'sample.hideKey': '鍵を隠す',
@@ -480,8 +480,8 @@ const EN = {
   'links.pass.alphaloom': 'Open it with this ciphertext (AlphaLoom estimates the key length)',
   'links.pass.ic': 'Open this ciphertext in key length estimation',
   'links.tooLong': '(longer than {max} letters, so it cannot be passed)',
-  'links.passNote': '"Open it with this ciphertext" puts the letters of the ciphertext into the URL of the other page. '
-    + 'Except for Day043, they go after the "?" in the URL, so the ciphertext reaches the GitHub Pages server. Do not pass text you want to keep private.',
+  'links.passNote': '"Open it with this ciphertext" puts the letters of the ciphertext after the "#" in the URL of the other page. '
+    + 'The part after "#" is not sent to the server. The URL as opened may still remain in the browser history.',
 
   'sample.showKey': 'Show key',
   'sample.hideKey': 'Hide key',

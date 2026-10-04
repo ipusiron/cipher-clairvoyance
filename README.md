@@ -215,7 +215,7 @@ npm test
 
 ## 🔒 セキュリティ
 
-- 入力した暗号文は、ブラウザーの中だけで処理し、外部へ送信しません。例外は、利用者が「渡して開く」を押したときだけです。このとき暗号文の英字をURLに入れて関連ツールを開くので、Day043以外（「?」より後ろに入れる形）では暗号文がGitHub Pagesのサーバーに届きます
+- 入力した暗号文は、ブラウザーの中だけで処理し、外部へ送信しません。「渡して開く」を押すと、暗号文の英字をURLの「#」より後ろに入れて関連ツールを開きます。「#」より後ろはサーバーへ送られません。開いたときのURLは、ブラウザーの閲覧履歴に残ることがあります
 - Content Security PolicyでスクリプトとスタイルをGitHub Pagesの同じ場所のファイルだけに限り、インラインのスクリプト・スタイルを許していません
 - 入力された文字列は`textContent`でだけ表示します（HTMLとして解釈しません）
 - ブラウザーに保存するのは、ライト／ダークと言語の選択だけです。保存できない環境でも動きます
@@ -228,12 +228,14 @@ npm test
 
 | ツール | 渡し方 |
 |---|---|
-| Frequency Analyzer（Day009） | `?text=`（5,000字まで） |
-| Vigenère Cipher Tool（Day017） | `?text=` |
-| Modular Text Divider（Day030） | `?text=…&n=…`（nは鍵長の候補の1位、1〜20） |
-| AlphaLoom（Day046） | `?text=`（10,000字まで。鍵の長さはAlphaLoomが推定する） |
-| IC Learning Visualizer（Day047） | `?text=…&tab=advanced`（10,000字まで。鍵長の推定のタブで開く） |
-| Columnar CipherLab（Day043） | `#tab=lab&c=…&m=incomplete`（解読ラボ。「#」より後ろなのでサーバーへは送られない） |
+| Frequency Analyzer（Day009） | `#text=`（5,000字まで） |
+| Vigenère Cipher Tool（Day017） | `#text=` |
+| Modular Text Divider（Day030） | `#text=…&n=…`（nは鍵長の候補の1位、1〜20） |
+| AlphaLoom（Day046） | `#text=`（10,000字まで。鍵の長さはAlphaLoomが推定する） |
+| IC Learning Visualizer（Day047） | `#text=…&tab=advanced`（10,000字まで。鍵長の推定のタブで開く） |
+| Columnar CipherLab（Day043） | `#tab=lab&c=…&m=incomplete`（解読ラボ） |
+
+どれも「#」より後ろで渡すので、暗号文はサーバーへ送られず、URLの長さの上限も受けません。GitHub Pagesは、パスと「?」以降が8,192バイトを超えると「414 URI Too Long」を返すので、「?」で渡すと英字が約8,150字を超えたところでエラーのページになります。
 
 周期ごとの一致指数の1位は鍵の長さの約数になることがあるので、AlphaLoomには鍵の長さを渡さず、推定を任せます（12字の鍵INDEPENDENCEのサンプルでは1位が6）。IC Learning Visualizer（Day047）の鍵長の推定では、候補を倍数まで並べます。
 
