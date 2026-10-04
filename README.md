@@ -93,7 +93,7 @@ Cipher Clairvoyanceは、英文を古典暗号で暗号化した文から、使�
 - お知らせ: 接戦、短い暗号文、短い多表式は見分けられないこと、試し解きで英文に戻らない（対象外の方式の可能性）、周期が見えない
 - 詳細な分析: 文字の頻度（数値の表つき）、周期ごとの一致指数と鍵長の候補、カシスキー法の集計
 - サンプル18件: アメリカ独立宣言の冒頭を参照実装で暗号化したもの。対象外の3×3のヒル暗号と短いヴィジュネル暗号の「判定が崩れる例」も含む。鍵は「鍵を見る」で表示を切り替える
-- 関連ツールへの受け渡し: 判定結果に合わせてシリーズの解読・学習ツールを示し、受け取り口のあるツール（Day009・017・030・043）には暗号文を渡して開ける
+- 関連ツールへの受け渡し: 判定結果に合わせてシリーズの解読・学習ツールを示し、受け取り口のあるツール（Day009・017・030・043・046・047）には暗号文を渡して開ける
 - 日本語／英語の切り替え、ライト／ダークの切り替え、キーボード操作、読み上げ用の状態表示
 
 ---
@@ -183,7 +183,7 @@ Cipher Clairvoyanceは、英文を古典暗号で暗号化した文から、使�
 - 小説・ゲーム・映像の小道具づくり: 作中に出す暗号文が、それらしい統計の特徴を持っているかを確かめる
 - プログラミングの学習: 参照実装・特徴量・モデル生成・テストが小さくまとまっているので、乱数の種の固定による再現性や、生成物をテストで縛る作り方を読める
 - 研究・教材づくりの比較基準: 長さ別の実測表と同じ手順で、別の判定方法の正答率を比べられる
-- シリーズのツールとの組み合わせ: Frequency Analyzer（Day009）に暗号文を渡して頻度を詳しく見る、Modular Text Divider（Day030）に暗号文と鍵長の候補を渡して列ごとに解く、Columnar CipherLab（Day043）の解読ラボで転置を解く、IC Learning Visualizer（Day047）で一致指数の意味を学ぶ
+- シリーズのツールとの組み合わせ: Frequency Analyzer（Day009）に暗号文を渡して頻度を詳しく見る、Modular Text Divider（Day030）に暗号文と鍵長の候補を渡して列ごとに解く、Columnar CipherLab（Day043）の解読ラボで転置を解く、AlphaLoom（Day046）に暗号文を渡して列ごとの候補から鍵を探す、IC Learning Visualizer（Day047）に暗号文を渡して鍵長の候補を倍数まで見ながら一致指数の意味を学ぶ
 
 ---
 
@@ -231,7 +231,11 @@ npm test
 | Frequency Analyzer（Day009） | `?text=`（5,000字まで） |
 | Vigenère Cipher Tool（Day017） | `?text=` |
 | Modular Text Divider（Day030） | `?text=…&n=…`（nは鍵長の候補の1位、1〜20） |
+| AlphaLoom（Day046） | `?text=`（10,000字まで。鍵の長さはAlphaLoomが推定する） |
+| IC Learning Visualizer（Day047） | `?text=…&tab=advanced`（10,000字まで。鍵長の推定のタブで開く） |
 | Columnar CipherLab（Day043） | `#tab=lab&c=…&m=incomplete`（解読ラボ。「#」より後ろなのでサーバーへは送られない） |
+
+周期ごとの一致指数の1位は鍵の長さの約数になることがあるので、AlphaLoomには鍵の長さを渡さず、推定を任せます（12字の鍵INDEPENDENCEのサンプルでは1位が6）。IC Learning Visualizer（Day047）の鍵長の推定では、候補を倍数まで並べます。
 
 
 - [Caesar Cipher Breaker（Day008）](https://ipusiron.github.io/caesar-cipher-breaker/): シーザー暗号を総当たりで解く
@@ -244,6 +248,7 @@ npm test
 - [Modular Text Divider（Day030）](https://ipusiron.github.io/modular-text-divider/): 周期ごとの列に分けて解く
 - [RailFence CipherLab（Day034）](https://ipusiron.github.io/railfence-cipherlab/): レールフェンス暗号
 - [Columnar CipherLab（Day043）](https://ipusiron.github.io/columnar-cipherlab/): 縦列転置式暗号
+- [AlphaLoom（Day046）](https://ipusiron.github.io/alphaloom/): 列ごとの候補からヴィジュネル暗号の鍵を探す
 - [IC Learning Visualizer（Day047）](https://ipusiron.github.io/ic-learning-visualizer/): 一致指数を学ぶ
 - [Affine CipherLab（Day049）](https://ipusiron.github.io/affine-cipherlab/): アフィン暗号
 

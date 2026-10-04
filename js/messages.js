@@ -192,6 +192,7 @@ const JA = {
   'links.vigenere': 'Vigenère Cipher Tool（Day017）で暗号化・復号する',
   'links.divider': 'Modular Text Divider（Day030）で周期ごとの列に分けて解く',
   'links.repeatseq': 'RepeatSeq Analyzer（Day028）で繰り返しから鍵長を調べる',
+  'links.alphaloom': 'AlphaLoom（Day046）で列ごとの候補から鍵を探す',
   'links.ic': 'IC Learning Visualizer（Day047）で一致指数を学ぶ',
   'links.playfair': 'Playfair CipherLab（Day027）でプレイフェア暗号を試す',
   'links.railfence': 'RailFence CipherLab（Day034）でレールフェンス暗号を試す',
@@ -201,6 +202,8 @@ const JA = {
   'links.pass.vigenere': 'この暗号文を渡して開く',
   'links.pass.divider': 'この暗号文と周期{n}を渡して開く',
   'links.pass.columnar': 'この暗号文を解読ラボで開く',
+  'links.pass.alphaloom': 'この暗号文を渡して開く（鍵の長さはAlphaLoomが推定）',
+  'links.pass.ic': 'この暗号文を渡して鍵長の推定を開く',
   'links.tooLong': '（{max}字を超えるので渡せません）',
   'links.passNote': '「渡して開く」は、暗号文の英字をURLに入れて相手のページを開きます。Day043以外はURLの「?」より後ろに入るので、暗号文がGitHub Pagesのサーバーに届きます。'
     + '人に見せたくない文は渡さないでください。',
@@ -464,6 +467,7 @@ const EN = {
   'links.vigenere': 'Encrypt and decrypt with Vigenère Cipher Tool (Day017)',
   'links.divider': 'Split it into columns by period with Modular Text Divider (Day030)',
   'links.repeatseq': 'Find the key length from repeats with RepeatSeq Analyzer (Day028)',
+  'links.alphaloom': 'Find the key from column-wise candidates with AlphaLoom (Day046)',
   'links.ic': 'Learn the index of coincidence with IC Learning Visualizer (Day047)',
   'links.playfair': 'Try the Playfair cipher in Playfair CipherLab (Day027)',
   'links.railfence': 'Try the rail fence cipher in RailFence CipherLab (Day034)',
@@ -473,6 +477,8 @@ const EN = {
   'links.pass.vigenere': 'Open it with this ciphertext',
   'links.pass.divider': 'Open it with this ciphertext and period {n}',
   'links.pass.columnar': 'Open this ciphertext in the solver lab',
+  'links.pass.alphaloom': 'Open it with this ciphertext (AlphaLoom estimates the key length)',
+  'links.pass.ic': 'Open this ciphertext in key length estimation',
   'links.tooLong': '(longer than {max} letters, so it cannot be passed)',
   'links.passNote': '"Open it with this ciphertext" puts the letters of the ciphertext into the URL of the other page. '
     + 'Except for Day043, they go after the "?" in the URL, so the ciphertext reaches the GitHub Pages server. Do not pass text you want to keep private.',

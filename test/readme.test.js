@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MODEL } from '../js/model.js';
 import { CIPHER_SAMPLES } from '../js/samples.js';
-import { allToolUrls } from '../js/links.js';
+import { allToolUrls, buildToolLinks, LINKS_BY_TYPE } from '../js/links.js';
 import { MESSAGES } from '../js/messages.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -119,6 +119,25 @@ for (const [lang, d] of Object.entries(DOCS)) {
   test(`${d.file}: サンプルの件数と関連ツールの一覧が実装と一致する`, () => {
     for (const s of d.samples(CIPHER_SAMPLES.length)) assert.ok(d.text.includes(s), s);
     for (const u of allToolUrls()) assert.ok(section(d.text, d.related).includes(`(${u})`), u);
+  });
+
+  test(`${d.file}: 受け渡しの表は、暗号文を渡せるツールを過不足なく載せ、渡し方が実装と一致する`, () => {
+    const passes = new Map();
+    for (const type of Object.keys(LINKS_BY_TYPE)) {
+      for (const link of buildToolLinks(type, 'ABC', 5)) if (link.pass) passes.set(link.id, link.pass.href);
+    }
+    const isHeader = (l) => l.startsWith('| ツール') || l.startsWith('| Tool');
+    const rows = section(d.text, d.related).split(String.fromCharCode(10)).filter((l) => l.startsWith('| ') && !isHeader(l));
+    assert.equal(rows.length, passes.size);
+    for (const [id, href] of passes) {
+      const day = MESSAGES.ja[`links.${id}`].match(/Day0[0-9][0-9]/)[0];
+      const row = rows.find((r) => r.includes(`(${day})`) || r.includes(`（${day}）`));
+      assert.ok(row, `${id} ${day}`);
+      const url = new URL(href);
+      const keys = url.hash ? [...new URLSearchParams(url.hash.slice(1)).keys()] : [...url.searchParams.keys()];
+      for (const k of keys) assert.ok(row.includes(`${k}=`), `${id}: ${k}`);
+      for (const k of ['text', 'n', 'tab', 'c', 'm']) if (!keys.includes(k)) assert.ok(!row.includes(`${k}=`), `${id}: ${k}`);
+    }
   });
 
   test(`${d.file}: ディレクトリー構造にすべてのファイルとディレクトリーが載り、全行に説明がある`, () => {

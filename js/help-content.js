@@ -95,6 +95,7 @@ const JA = `
       <li>${LINK('modular-text-divider/', 'Modular Text Divider（Day030）')}：周期ごとの列に分けて解く</li>
       <li>${LINK('railfence-cipherlab/', 'RailFence CipherLab（Day034）')}：レールフェンス暗号</li>
       <li>${LINK('columnar-cipherlab/', 'Columnar CipherLab（Day043）')}：縦列転置式暗号</li>
+      <li>${LINK('alphaloom/', 'AlphaLoom（Day046）')}：列ごとの候補からヴィジュネル暗号の鍵を探す</li>
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer（Day047）')}：一致指数を学ぶ</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab（Day049）')}：アフィン暗号</li>
     </ul>
@@ -217,6 +218,7 @@ const EN = `
       <li>${LINK('modular-text-divider/', 'Modular Text Divider (Day030)')}: split the text into columns by period</li>
       <li>${LINK('railfence-cipherlab/', 'RailFence CipherLab (Day034)')}: the rail fence cipher</li>
       <li>${LINK('columnar-cipherlab/', 'Columnar CipherLab (Day043)')}: columnar transposition</li>
+      <li>${LINK('alphaloom/', 'AlphaLoom (Day046)')}: find a Vigenère key from column-wise candidates</li>
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer (Day047)')}: learn the index of coincidence</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab (Day049)')}: the affine cipher</li>
     </ul>

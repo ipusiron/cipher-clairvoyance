@@ -46,3 +46,29 @@ test('Day043 には「#」より後ろで渡し、解読ラボ・埋字なしで
   assert.deepEqual([params.get('tab'), params.get('c'), params.get('m')], ['lab', 'EVLNACDTESEAROFODEECWIREE', 'incomplete']);
   assert.equal(link.pass.via, 'fragment');
 });
+
+test('Day047 には ?text= と &tab=advanced で渡し、鍵長の推定のタブで開く（ヴィジュネル・オートキー。1万字まで）', () => {
+  for (const type of ['vigenere', 'autokey']) {
+    const link = byId(buildToolLinks(type, 'LXFOPVEFRNHR', 5), 'ic');
+    const url = new URL(link.pass.href);
+    assert.equal(url.origin + url.pathname, `${BASE}ic-learning-visualizer/`);
+    assert.deepEqual([url.searchParams.get('text'), url.searchParams.get('tab'), url.searchParams.get('n')], ['LXFOPVEFRNHR', 'advanced', null], type);
+    assert.equal(link.pass.via, 'query');
+  }
+  assert.equal(byId(buildToolLinks('vigenere', 'A'.repeat(10000), 5), 'ic').pass.tooLong, false);
+  assert.equal(byId(buildToolLinks('vigenere', 'A'.repeat(10001), 5), 'ic').pass.href, null);
+});
+
+test('AlphaLoom（Day046）はヴィジュネルにだけ出し、?text= だけで渡す（周期があっても n は付けない。1万字まで）', () => {
+  const types = Object.entries(LINKS_BY_TYPE).filter(([, ids]) => ids.includes('alphaloom')).map(([type]) => type);
+  assert.deepEqual(types, ['vigenere']);
+  for (const period of [6, null]) {
+    const link = byId(buildToolLinks('vigenere', 'EUHRXRGKIPQY', period), 'alphaloom');
+    const url = new URL(link.pass.href);
+    assert.equal(url.origin + url.pathname, `${BASE}alphaloom/`);
+    assert.deepEqual([...url.searchParams.keys()], ['text']);
+    assert.equal(url.searchParams.get('text'), 'EUHRXRGKIPQY');
+    assert.equal(link.pass.period, null);
+  }
+  assert.equal(byId(buildToolLinks('vigenere', 'A'.repeat(10001), 6), 'alphaloom').pass.tooLong, true);
+});
