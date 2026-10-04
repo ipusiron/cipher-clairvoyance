@@ -133,6 +133,8 @@ for (const [lang, d] of Object.entries(DOCS)) {
       const day = MESSAGES.ja[`links.${id}`].match(/Day0[0-9][0-9]/)[0];
       const row = rows.find((r) => r.includes(`(${day})`) || r.includes(`（${day}）`));
       assert.ok(row, `${id} ${day}`);
+      // 渡し方はすべて「#」より後ろ（「?」で渡す書き方が残っていない）
+      assert.ok(row.includes('`#') && !row.includes('`?'), `${id}: ${row}`);
       const url = new URL(href);
       const keys = url.hash ? [...new URLSearchParams(url.hash.slice(1)).keys()] : [...url.searchParams.keys()];
       for (const k of keys) assert.ok(row.includes(`${k}=`), `${id}: ${k}`);

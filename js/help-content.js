@@ -78,7 +78,7 @@ const JA = `
       <li>英語の文を暗号化したものが前提です。ほかの言語の文では、統計値が英語と違うので判定が外れます</li>
       <li>上の一覧にない方式（3×3のヒル暗号など）も、どれかの方式に振り分けられます。多くはヴィジュネル暗号・オートキー暗号・ヒル暗号のどれかになり、試し解きでは英文に戻りません</li>
       <li>短い暗号文ほど外れやすくなります。とくに英字20〜49字では、ヴィジュネル暗号・オートキー暗号・バイフィッド暗号・ヒル暗号はほとんど見分けられません（上の表）</li>
-      <li>「渡して開く」は暗号文をURLに入れます。Day043以外は暗号文がGitHub Pagesのサーバーに届くので、人に見せたくない文は渡さないでください</li>
+      <li>「渡して開く」は暗号文をURLの「#」より後ろに入れます。サーバーへは送られませんが、開いたときのURLはブラウザーの閲覧履歴に残ることがあります</li>
     </ul>
   </section>
 
@@ -200,8 +200,8 @@ const EN = `
         and their trial decryption does not turn back into English</li>
       <li>The shorter the text, the more often the verdict is wrong. With 20-49 letters the Vigenère, autokey, Bifid and Hill ciphers can hardly
         be told apart (see the table above)</li>
-      <li>"Open it with this ciphertext" puts the ciphertext into the URL. Except for Day043, the ciphertext reaches the GitHub Pages server,
-        so do not pass text you want to keep private</li>
+      <li>"Open it with this ciphertext" puts the ciphertext after the "#" in the URL. It is not sent to the server,
+        but the URL as opened may remain in the browser history</li>
     </ul>
   </section>
 

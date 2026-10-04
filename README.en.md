@@ -176,7 +176,7 @@ npm test
 
 ## 🔒 Security
 
-- The ciphertext you enter is processed only inside the browser and is not sent anywhere. The only exception is when you press "Open it with this ciphertext": the letters of the ciphertext go into the URL of the related tool, and except for Day043 (where they go after "?"), the ciphertext reaches the GitHub Pages server
+- The ciphertext you enter is processed only inside the browser and is not sent anywhere. When you press "Open it with this ciphertext", the letters of the ciphertext go after the "#" in the URL of the related tool. The part after "#" is not sent to the server. The URL as opened may remain in the browser history
 - The Content Security Policy limits scripts and styles to files from the same origin and allows no inline scripts or styles
 - Entered text is displayed only through `textContent` (never interpreted as HTML)
 - The browser stores only the light/dark and language choices, and the tool works where storage is unavailable
@@ -189,12 +189,14 @@ Depending on the verdict, the screen lists the following tools under "🔧 Tools
 
 | Tool | How it is passed |
 |---|---|
-| Frequency Analyzer (Day009) | `?text=` (up to 5,000 letters) |
-| Vigenère Cipher Tool (Day017) | `?text=` |
-| Modular Text Divider (Day030) | `?text=…&n=…` (n is the first key length candidate, 1-20) |
-| AlphaLoom (Day046) | `?text=` (up to 10,000 letters; AlphaLoom estimates the key length) |
-| IC Learning Visualizer (Day047) | `?text=…&tab=advanced` (up to 10,000 letters; opens key length estimation) |
-| Columnar CipherLab (Day043) | `#tab=lab&c=…&m=incomplete` (the solver lab; after "#", so it is not sent to the server) |
+| Frequency Analyzer (Day009) | `#text=` (up to 5,000 letters) |
+| Vigenère Cipher Tool (Day017) | `#text=` |
+| Modular Text Divider (Day030) | `#text=…&n=…` (n is the first key length candidate, 1-20) |
+| AlphaLoom (Day046) | `#text=` (up to 10,000 letters; AlphaLoom estimates the key length) |
+| IC Learning Visualizer (Day047) | `#text=…&tab=advanced` (up to 10,000 letters; opens key length estimation) |
+| Columnar CipherLab (Day043) | `#tab=lab&c=…&m=incomplete` (the solver lab) |
+
+Every link passes the ciphertext after "#", so it is not sent to the server and is not subject to the URL length limit. GitHub Pages returns "414 URI Too Long" when the path and the part after "?" exceed 8,192 bytes, so passing after "?" would end on an error page beyond about 8,150 letters.
 
 The first period by index of coincidence can be a divisor of the key length, so AlphaLoom gets no key length and estimates it itself (for the sample with the 12-letter key INDEPENDENCE, the first candidate is 6). Key length estimation in IC Learning Visualizer (Day047) lists the candidates with their multiples.
 
