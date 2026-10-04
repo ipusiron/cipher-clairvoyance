@@ -54,7 +54,7 @@ Try it directly in your browser. The screen can be switched between Japanese and
 - Notes: close calls, short texts, short polyalphabetic texts that cannot be told apart, trial decryptions that do not turn back into English (possibly an unsupported method), and missing periods
 - Detailed analysis: letter frequencies (with a table of values), the index of coincidence by period with key length candidates, and Kasiski counts
 - 18 samples: the opening of the US Declaration of Independence encrypted with the reference implementations, including two "failing cases" (an unsupported 3×3 Hill cipher and a short Vigenère cipher). Keys are shown with "Show key"
-- Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043, 046, 047) with the ciphertext filled in
+- Passing to related tools: the tool suggests decoding and learning tools from the series for the verdict, and opens the ones that accept input (Day009, 017, 030, 043, 046, 047, 049) with the ciphertext filled in
 - Japanese/English switch, light/dark switch, keyboard operation and a status message for screen readers
 
 ---
@@ -195,6 +195,7 @@ Depending on the verdict, the screen lists the following tools under "🔧 Tools
 | AlphaLoom (Day046) | `#text=` (up to 10,000 letters; AlphaLoom estimates the key length) |
 | IC Learning Visualizer (Day047) | `#text=…&tab=advanced` (up to 10,000 letters; opens key length estimation) |
 | Columnar CipherLab (Day043) | `#tab=lab&c=…&m=incomplete` (the solver lab) |
+| Affine CipherLab (Day049) | `#text=` (opens the brute-force attack) |
 
 Every link passes the ciphertext after "#", so it is not sent to the server and is not subject to the URL length limit. GitHub Pages returns "414 URI Too Long" when the path and the part after "?" exceed 8,192 bytes, so passing after "?" would end on an error page beyond about 8,150 letters.
 

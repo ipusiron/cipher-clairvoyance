@@ -88,3 +88,11 @@ test('AlphaLoom（Day046）はヴィジュネルにだけ出し、#text= だけ�
   }
   assert.equal(byId(buildToolLinks('vigenere', 'A'.repeat(10001), 6), 'alphaloom').pass.tooLong, true);
 });
+
+test('Day049 には #text= で渡し、総当たり解読タブで開く（アフィン暗号と判定したとき）', () => {
+  const link = byId(buildToolLinks('affine', 'RCLLAOAPLX'), 'affine');
+  const url = new URL(link.pass.href);
+  assert.equal(url.origin + url.pathname, `${BASE}affine-cipherlab/`);
+  assert.deepEqual([...hashParams(link.pass.href).entries()], [['text', 'RCLLAOAPLX']]);
+  assert.equal(byId(buildToolLinks('affine', 'A'.repeat(10001)), 'affine').pass.tooLong, true);
+});
