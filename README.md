@@ -244,6 +244,7 @@ npm test
 - [Modular Text Divider（Day030）](https://ipusiron.github.io/modular-text-divider/): 周期ごとの列に分けて解く
 - [RailFence CipherLab（Day034）](https://ipusiron.github.io/railfence-cipherlab/): レールフェンス暗号
 - [Columnar CipherLab（Day043）](https://ipusiron.github.io/columnar-cipherlab/): 縦列転置式暗号
+- [AlphaLoom（Day046）](https://ipusiron.github.io/alphaloom/): 列ごとの候補からヴィジュネル暗号の鍵を探す
 - [IC Learning Visualizer（Day047）](https://ipusiron.github.io/ic-learning-visualizer/): 一致指数を学ぶ
 - [Affine CipherLab（Day049）](https://ipusiron.github.io/affine-cipherlab/): アフィン暗号
 

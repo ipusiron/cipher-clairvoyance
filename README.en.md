@@ -204,6 +204,7 @@ Depending on the verdict, the screen lists the following tools under "🔧 Tools
 - [Modular Text Divider (Day030)](https://ipusiron.github.io/modular-text-divider/): split the text into columns by period
 - [RailFence CipherLab (Day034)](https://ipusiron.github.io/railfence-cipherlab/): the rail fence cipher
 - [Columnar CipherLab (Day043)](https://ipusiron.github.io/columnar-cipherlab/): columnar transposition
+- [AlphaLoom (Day046)](https://ipusiron.github.io/alphaloom/): find a Vigenère key from column-wise candidates
 - [IC Learning Visualizer (Day047)](https://ipusiron.github.io/ic-learning-visualizer/): learn the index of coincidence
 - [Affine CipherLab (Day049)](https://ipusiron.github.io/affine-cipherlab/): the affine cipher
 
