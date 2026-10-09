@@ -191,3 +191,36 @@ test('ALGORITHM.md の典型値の表は、400字以上の長さ帯のモデル�
     assert.deepEqual(got, MODEL.params.n400[c].mean.map((v) => Number(v.toPrecision(3))), c);
   }
 });
+
+test('ユースケースの「このツールならではの使い方」の例は判定と一致する（日英）', async () => {
+  const { analyze } = await import('../js/analysis.js');
+  const { caesarEncrypt } = await import('../js/cipher-core.js');
+  const { createHash } = await import('node:crypto');
+  const [ja, en] = [DOCS.ja.text, read('README.en.md')];
+  const code = (text, start) => text.slice(text.indexOf('`', text.indexOf(start)) + 1).split('`')[0];
+  const romaji = code(ja, '学習データの外で');
+  assert.equal(code(en, 'Watching the verdict'), romaji);
+  const r = analyze(romaji);
+  const pct = Math.round(r.measured.correct / r.measured.predicted * 100);
+  assert.deepEqual([r.n, r.winner, pct, r.measured.correct, r.measured.predicted], [108, 'substitution', 87, 300, 343]);
+  assert.ok(ja.includes('（英字108字）') && ja.includes('87%（300／343件）'));
+  assert.ok(en.includes('(108 letters)') && en.includes('87% of the time (300 of 343)'));
+  const iroha = 'IROHANIHOHETO CHIRINURUWO WAKAYOTAREZO TSUNENARAMU UINOOKUYAMA KEFUKOETE ASAKIYUMEMISHI WEHIMOSEZU';
+  assert.deepEqual([analyze(iroha).n, analyze(iroha).winner], [91, 'transposition']);
+  const gadsby = code(ja, '1つの統計値に頼らない');
+  assert.equal(code(en, 'Checking a verdict'), gadsby);
+  assert.ok(!gadsby.includes('E'));
+  const g = analyze(caesarEncrypt(gadsby.replace(/ /g, ''), 7));
+  assert.deepEqual([g.n, g.winner, g.trial.shift, g.trial.englishLike], [94, 'caesar', 7, true]);
+  const fox = 'BUTAFASTGRAYFOXDIDJUMPONALAZYDOG';
+  assert.equal(fox.length, 32);
+  assert.notEqual(analyze(caesarEncrypt(fox, 7)).winner, 'caesar');
+  let rnd = '';
+  for (let i = 0; rnd.length < 200; i++) {
+    for (const b of createHash('sha256').update('try100-' + i).digest()) if (b < 234 && rnd.length < 200) rnd += String.fromCharCode(65 + (b % 26));
+  }
+  const keys = (n) => analyze(rnd.slice(0, n)).notes.map((x) => x.key);
+  assert.equal(analyze(rnd).winner, 'vigenere');
+  assert.ok(keys(200).includes('note.noPeriod') && keys(200).includes('note.trialFailed'));
+  assert.ok(!keys(199).includes('note.noPeriod') && !keys(199).includes('note.trialFailed'));
+});
