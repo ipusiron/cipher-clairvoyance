@@ -110,3 +110,17 @@ test('Day093はヒル暗号の判定にだけ出し、#text=で渡す。鍵を�
   assert.equal(over.href, null);
   assert.ok(byId(buildToolLinks('hill', 'HIAT'), 'frequency'));
 });
+
+test('Day095は転置式暗号の判定に出し、#text=で渡す。1万字を超えたら渡さない', () => {
+  const types = Object.entries(LINKS_BY_TYPE).filter(([, ids]) => ids.includes('permutation')).map(([type]) => type);
+  assert.deepEqual(types, ['transposition']);
+  const link = byId(buildToolLinks('transposition', 'NGEIAIMUSF', 4), 'permutation');
+  assert.equal(link.href, `${BASE}permutation-cipherlab/`);
+  assert.deepEqual([...hashParams(link.pass.href).entries()], [['text', 'NGEIAIMUSF']]);
+  assert.equal(link.pass.period, null);
+  assert.equal(byId(buildToolLinks('transposition', 'A'.repeat(10000)), 'permutation').pass.tooLong, false);
+  const over = byId(buildToolLinks('transposition', 'A'.repeat(10001)), 'permutation').pass;
+  assert.equal(over.tooLong, true);
+  assert.equal(over.href, null);
+  assert.ok(byId(buildToolLinks('transposition', 'NGEI'), 'columnar'));
+});
