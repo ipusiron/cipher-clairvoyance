@@ -9,6 +9,7 @@
 //   Day047 IC Learning Visualizer #text=…&tab=advanced（10,000字まで。鍵長の推定のタブで、候補を倍数まで並べる）
 //   Day043 Columnar CipherLab   #tab=lab&c=…&m=incomplete（解読ラボで開く）
 //   Day049 Affine CipherLab     #text=（総当たり解読タブで開き、312通りの鍵を試した結果を出す）
+//   Day093 Hill CipherLab       #text=（10,000字まで。解読タブに読み込み、解読は自動実行しない）
 
 export const BASE = 'https://ipusiron.github.io/';
 
@@ -16,6 +17,7 @@ const TOOLS = {
   caesarBreaker: { key: 'links.caesar', path: 'caesar-cipher-breaker/' },
   frequency: { key: 'links.frequency', path: 'frequency-analyzer/', pass: { key: 'links.pass.frequency', max: 5000 } },
   affine: { key: 'links.affine', path: 'affine-cipherlab/', pass: { key: 'links.pass.affine', max: 10000 } },
+  hill: { key: 'links.hill', path: 'hill-cipherlab/', pass: { key: 'links.pass.hill', max: 10000 } },
   cipherclimb: { key: 'links.cipherclimb', path: 'cipherclimb/' },
   vigenere: { key: 'links.vigenere', path: 'vigenere-cipher-tool/', pass: { key: 'links.pass.vigenere', max: 100000 } },
   divider: { key: 'links.divider', path: 'modular-text-divider/', pass: { key: 'links.pass.divider', max: 10000, needsPeriod: true } },
@@ -36,7 +38,7 @@ export const LINKS_BY_TYPE = {
   autokey: ['frequency', 'ic'],
   playfair: ['playfair'],
   bifid: ['frequency'],
-  hill: ['frequency'],
+  hill: ['hill', 'frequency'],
   transposition: ['columnar', 'railfence', 'grille']
 };
 
