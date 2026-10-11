@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { MESSAGES, t, setLanguage, getLanguage } from '../js/messages.js';
 import { detectLanguage } from '../js/i18n.js';
 import { HELP_CONTENT } from '../js/help-content.js';
+import { allToolUrls } from '../js/links.js';
 
 const JP = /[　-ヿ㐀-鿿＀-￯]/;
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -31,6 +32,7 @@ test('英語のヘルプに日本語の文字がなく、日本語と同じ組�
     assert.match(HELP_CONTENT[lang], /<dl id="helpFeatures"/);
     assert.match(HELP_CONTENT[lang], /<table id="helpAccuracy"/);
     assert.doesNotMatch(HELP_CONTENT[lang], /\n/);
+    for (const url of allToolUrls()) assert.ok(HELP_CONTENT[lang].includes(`href="${url}"`), `${lang}: ${url}`);
   }
   const count = (s, re) => (s.match(re) || []).length;
   assert.equal(count(HELP_CONTENT.en, /<section/g), count(HELP_CONTENT.ja, /<section/g));

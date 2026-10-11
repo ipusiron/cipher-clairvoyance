@@ -96,3 +96,17 @@ test('Day049 には #text= で渡し、総当たり解読タブで開く（ア�
   assert.deepEqual([...hashParams(link.pass.href).entries()], [['text', 'RCLLAOAPLX']]);
   assert.equal(byId(buildToolLinks('affine', 'A'.repeat(10001)), 'affine').pass.tooLong, true);
 });
+
+test('Day093はヒル暗号の判定にだけ出し、#text=で渡す。鍵を推測して添えず、1万字を超えたら渡さない', () => {
+  const types = Object.entries(LINKS_BY_TYPE).filter(([, ids]) => ids.includes('hill')).map(([type]) => type);
+  assert.deepEqual(types, ['hill']);
+  const link = byId(buildToolLinks('hill', 'HIAT', 5), 'hill');
+  assert.equal(link.href, `${BASE}hill-cipherlab/`);
+  assert.deepEqual([...hashParams(link.pass.href).entries()], [['text', 'HIAT']]);
+  assert.equal(link.pass.period, null);
+  assert.equal(byId(buildToolLinks('hill', 'A'.repeat(10000)), 'hill').pass.tooLong, false);
+  const over = byId(buildToolLinks('hill', 'A'.repeat(10001)), 'hill').pass;
+  assert.equal(over.tooLong, true);
+  assert.equal(over.href, null);
+  assert.ok(byId(buildToolLinks('hill', 'HIAT'), 'frequency'));
+});
