@@ -98,6 +98,7 @@ const JA = `
       <li>${LINK('alphaloom/', 'AlphaLoom（Day046）')}：列ごとの候補からヴィジュネル暗号の鍵を探す</li>
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer（Day047）')}：一致指数を学ぶ</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab（Day049）')}：アフィン暗号</li>
+      <li>${LINK('hill-cipherlab/', 'Hill CipherLab（Day093）')}：ヒル暗号の解読、行列の計算と線形性の学習</li>
     </ul>
   </section>
 
@@ -221,6 +222,7 @@ const EN = `
       <li>${LINK('alphaloom/', 'AlphaLoom (Day046)')}: find a Vigenère key from column-wise candidates</li>
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer (Day047)')}: learn the index of coincidence</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab (Day049)')}: the affine cipher</li>
+      <li>${LINK('hill-cipherlab/', 'Hill CipherLab (Day093)')}: Hill cipher attacks, matrix calculations and linearity</li>
     </ul>
   </section>
 
