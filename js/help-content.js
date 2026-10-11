@@ -99,6 +99,7 @@ const JA = `
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer（Day047）')}：一致指数を学ぶ</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab（Day049）')}：アフィン暗号</li>
       <li>${LINK('hill-cipherlab/', 'Hill CipherLab（Day093）')}：ヒル暗号の解読、行列の計算と線形性の学習</li>
+      <li>${LINK('permutation-cipherlab/', 'Permutation CipherLab（Day095）')}：ブロック転置式暗号の解読（既知平文・鍵なし解読・作業台）</li>
     </ul>
   </section>
 
@@ -223,6 +224,7 @@ const EN = `
       <li>${LINK('ic-learning-visualizer/', 'IC Learning Visualizer (Day047)')}: learn the index of coincidence</li>
       <li>${LINK('affine-cipherlab/', 'Affine CipherLab (Day049)')}: the affine cipher</li>
       <li>${LINK('hill-cipherlab/', 'Hill CipherLab (Day093)')}: Hill cipher attacks, matrix calculations and linearity</li>
+      <li>${LINK('permutation-cipherlab/', 'Permutation CipherLab (Day095)')}: block transposition attacks (known plaintext, ciphertext only, workbench)</li>
     </ul>
   </section>
 
